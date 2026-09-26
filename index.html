@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sweets of the Heart · Precios</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#4E342E">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{
+  --cream:#FFF9F2; --card:#FFFFFF; --choc:#4E342E; --choc-soft:#6D4C41;
+  --cinnamon:#C97B4A; --caramel:#E8A75C; --rose:#D96C75;
+  --green:#4C8056; --yellow:#B98A2F; --red:#B64848;
+  --line:#F0E4D4; --muted:#8D7B6E; --radius:16px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--cream); color:var(--choc); padding-bottom:92px}
+header{background:linear-gradient(135deg,var(--choc),#6D4C41); color:#FFF6EA;
+  padding:20px 18px 16px; position:sticky; top:0; z-index:10}
+header h1{margin:0; font-size:20px; letter-spacing:.3px}
+header p{margin:4px 0 0; font-size:13px; opacity:.85}
+main{padding:14px 14px 0; max-width:720px; margin:0 auto}
+section.tab{display:none}
+section.tab.active{display:block; animation:fade .18s ease}
+@keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(78,52,46,.06)}
+.card h3{margin:0 0 8px; font-size:16px}
+.row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+label.field{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+label.field span{display:block; margin-bottom:3px}
+input,select{width:100%; font-size:16px; padding:10px 12px; border:1.5px solid var(--line);
+  border-radius:12px; background:#FFFEFB; color:var(--choc)}
+input:focus,select:focus{outline:none; border-color:var(--cinnamon)}
+button{font-size:15px; border:none; border-radius:12px; padding:11px 16px; cursor:pointer;
+  background:var(--cinnamon); color:#fff; font-weight:600}
+button.ghost{background:#F7EFE4; color:var(--choc)}
+button.danger{background:#FBE9E7; color:var(--red)}
+button.small{padding:7px 10px; font-size:13px}
+.big{font-size:26px; font-weight:800}
+.muted{color:var(--muted); font-size:13px}
+.badge{display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px}
+.badge.ok{background:#E6F2E8; color:var(--green)}
+.badge.warn{background:#FBF3DC; color:var(--yellow)}
+.badge.bad{background:#FBE7E7; color:var(--red)}
+.badge.info{background:#F3E9DC; color:var(--choc-soft)}
+.kv{display:flex; justify-content:space-between; padding:5px 0; font-size:14px}
+.kv strong{font-variant-numeric:tabular-nums}
+hr.sep{border:none; border-top:1px solid var(--line); margin:10px 0}
+table.lines{width:100%; border-collapse:collapse; font-size:14px}
+table.lines td, table.lines th{padding:8px 4px; border-bottom:1px solid var(--line); text-align:left}
+table.lines th{font-size:12px; color:var(--muted); font-weight:600}
+.num{text-align:right; font-variant-numeric:tabular-nums}
+nav#tabs{position:fixed; bottom:0; left:0; right:0; z-index:20; background:#FFFDF9;
+  border-top:1px solid var(--line); display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+nav#tabs button{flex:1; background:none; color:var(--muted); font-size:11px; font-weight:600;
+  padding:8px 2px; border-radius:10px; display:flex; flex-direction:column; align-items:center; gap:3px}
+nav#tabs button .ico{font-size:20px}
+nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
+.notice{background:#FBF3DC; border:1px solid #EAD9A8; color:#7A5B16; border-radius:12px;
+  padding:10px 12px; font-size:13px; margin-bottom:12px}
+.total-row{background:var(--choc); color:#FFF6EA; border-radius:12px; padding:12px 14px;
+  display:flex; justify-content:space-between; align-items:center; margin-top:10px}
+.total-row .big{color:#FFDFAE}
+.copy-ok{color:var(--green); font-size:13px; font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧁 Sweets of the Heart</h1>
+  <p>Precios y cotizaciones · herramienta interna</p>
+</header>
+<main>
+  <section id="tab-productos" class="tab active"></section>
+  <section id="tab-recetas" class="tab"></section>
+  <section id="tab-insumos" class="tab"></section>
+  <section id="tab-cotizar" class="tab"></section>
+</main>
+<nav id="tabs">
+  <button data-tab="productos" class="active"><span class="ico">🧾</span>Productos</button>
+  <button data-tab="recetas"><span class="ico">📝</span>Recetas</button>
+  <button data-tab="insumos"><span class="ico">🧂</span>Insumos</button>
+  <button data-tab="cotizar"><span class="ico">💬</span>Cotizar</button>
+</nav>
+<script>
+"use strict";
+/* ===== Datos iniciales (precios reales del flyer; insumos y recetas son EJEMPLOS) ===== */
+const SEED = {
+  factor: 3.5,
+  ingredients: [
+    {id:"harina",   name:"Harina todo uso",      price:4.50, pkg:20,   unit:"taza"},
+    {id:"azucar",   name:"Azúcar granulada",     price:3.80, pkg:9,    unit:"taza"},
+    {id:"huevos",   name:"Huevos",               price:4.20, pkg:12,   unit:"und"},
+    {id:"manteq",   name:"Mantequilla",          price:4.50, pkg:2,    unit:"taza"},
+    {id:"lcond",    name:"Leche condensada",     price:2.20, pkg:1.75, unit:"taza"},
+    {id:"levap",    name:"Leche evaporada",      price:1.80, pkg:1.5,  unit:"taza"},
+    {id:"crema",    name:"Crema para batir",     price:4.00, pkg:2,    unit:"taza"},
+    {id:"limon",    name:"Limones",              price:0.50, pkg:1,    unit:"und"},
+    {id:"framb",    name:"Frambuesas",           price:4.00, pkg:6,    unit:"oz"},
+    {id:"marac",    name:"Pulpa de maracuyá",    price:5.00, pkg:14,   unit:"oz"},
+    {id:"fruta",    name:"Fruta mixta",          price:5.00, pkg:32,   unit:"oz"},
+    {id:"aglass",   name:"Azúcar glass",         price:3.00, pkg:8,    unit:"taza"},
+    {id:"vain",     name:"Vainilla",             price:6.00, pkg:12,   unit:"cdta"},
+    {id:"phornear", name:"Polvo de hornear",     price:3.50, pkg:20,   unit:"cdta"},
+    {id:"caja9",    name:"Caja para pie 9\u2033", price:1.50, pkg:1,    unit:"und"},
+    {id:"base10",   name:"Base dorada 10\u2033",  price:0.80, pkg:1,    unit:"und"}
+  ],
+  products: [
+    {id:"pie-limon",  name:"Lemon Meringue Pie",  price:23,   portions:8,  packaging:1.50, recipe:[
+      {ing:"harina",qty:2},{ing:"manteq",qty:0.5},{ing:"azucar",qty:1.5},{ing:"huevos",qty:4},{ing:"limon",qty:6},{ing:"aglass",qty:1}]},
+    {id:"pie-framb",  name:"Raspberry Pie",       price:23,   portions:8,  packaging:1.50, recipe:[
+      {ing:"harina",qty:2},{ing:"manteq",qty:0.5},{ing:"azucar",qty:1},{ing:"huevos",qty:2},{ing:"framb",qty:12}]},
+    {id:"pie-marac",  name:"Passion Fruit Pie",   price:25,   portions:8,  packaging:1.50, recipe:[
+      {ing:"harina",qty:2},{ing:"manteq",qty:0.5},{ing:"azucar",qty:1.25},{ing:"huevos",qty:4},{ing:"marac",qty:14}]},
+    {id:"tart-frut",  name:"Fruit Tart",          price:20,   portions:8,  packaging:1.50, recipe:[
+      {ing:"harina",qty:1.5},{ing:"manteq",qty:0.4},{ing:"azucar",qty:0.75},{ing:"huevos",qty:3},{ing:"crema",qty:1},{ing:"fruta",qty:16}]},
+    {id:"treslech",   name:"Tres Leches Desserts",price:30,   portions:12, packaging:2.00, recipe:[
+      {ing:"harina",qty:2},{ing:"azucar",qty:1.5},{ing:"huevos",qty:6},{ing:"lcond",qty:1.75},{ing:"levap",qty:1.5},{ing:"crema",qty:2},{ing:"vain",qty:1}]},
+    {id:"brazo",      name:"Swiss Roll / Cake",   price:20,   portions:10, packaging:1.50, recipe:[
+      {ing:"harina",qty:1},{ing:"azucar",qty:1},{ing:"huevos",qty:5},{ing:"vain",qty:1},{ing:"aglass",qty:0.5}]},
+    {id:"custom",     name:"Custom Cakes",        price:null, portions:12, packaging:3.00, recipe:[
+      {ing:"harina",qty:3},{ing:"azucar",qty:2},{ing:"huevos",qty:6},{ing:"manteq",qty:0.5},{ing:"vain",qty:2}]}
+  ]
+};
+
+/* ===== Estado ===== */
+const KEY = "soth-data-v1";
+let state;
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ state = JSON.parse(raw); return; }
+  }catch(e){}
+  state = JSON.parse(JSON.stringify(SEED));
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function resetData(){
+  if(confirm("¿Restablecer todos los datos a los valores de ejemplo?")){
+    localStorage.removeItem(KEY); load(); renderAll();
+  }
+}
+
+/* ===== Cálculos ===== */
+const ingById = id => state.ingredients.find(i=>i.id===id);
+const prodById = id => state.products.find(p=>p.id===id);
+const unitCost = ing => ing.pkg > 0 ? ing.price/ing.pkg : 0;
+function recipeCost(p){
+  return p.recipe.reduce((s,l)=>{ const ing=ingById(l.ing); return s + (ing? l.qty*unitCost(ing):0); },0);
+}
+const totalCost = p => recipeCost(p) + (p.packaging||0);
+const factorOf = p => p.factor || state.factor;
+const suggested = p => Math.round(totalCost(p)*factorOf(p));
+const money = n => "$"+Number(n).toFixed(2);
+const money0 = n => "$"+Math.round(Number(n));
+function marginBadge(p){
+  if(p.price==null) return `<span class="badge info">precio a cotizar</span>`;
+  const s = suggested(p), r = p.price/s;
+  if(r>=1)   return `<span class="badge ok">✓ cubre costos ×${factorOf(p)}</span>`;
+  if(r>=0.9) return `<span class="badge warn">margen ajustado</span>`;
+  return `<span class="badge bad">bajo el sugerido (${money0(s)})</span>`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===== Pestaña: Productos ===== */
+function renderProductos(){
+  const el = document.getElementById("tab-productos");
+  let h = `<div class="notice">Precios reales del flyer. Los <b>costos de insumos son ejemplos</b>: actualízalos en la pestaña Insumos.</div>`;
+  h += `<div class="card"><div class="row">
+      <label class="field" style="flex:1"><span>Factor global (precio = costo × factor)</span>
+      <input type="number" step="0.1" min="1" value="${state.factor}" data-edit="factor"></label>
+    </div></div>`;
+  for(const p of state.products){
+    const rc=recipeCost(p), tc=totalCost(p), sug=suggested(p);
+    const perSlice = p.price!=null ? p.price/p.portions : sug/p.portions;
+    h += `<div class="card" data-product="${p.id}">
+      <h3>${esc(p.name)}</h3>
+      <div class="grid2">
+        <label class="field"><span>Precio entero (USD)</span>
+          <input type="number" step="0.5" min="0" placeholder="a cotizar" value="${p.price??""}" data-pf="price"></label>
+        <label class="field"><span>Porciones</span>
+          <input type="number" step="1" min="1" value="${p.portions}" data-pf="portions"></label>
+        <label class="field"><span>Empaque (USD)</span>
+          <input type="number" step="0.1" min="0" value="${p.packaging||0}" data-pf="packaging"></label>
+        <label class="field"><span>Factor (vacío = global)</span>
+          <input type="number" step="0.1" min="1" placeholder="${state.factor}" value="${p.factor??""}" data-pf="factor"></label>
+      </div>
+      <hr class="sep">
+      <div class="kv"><span>Costo receta</span><strong>${money(rc)}</strong></div>
+      <div class="kv"><span>Costo total (receta + empaque)</span><strong>${money(tc)}</strong></div>
+      <div class="kv"><span>Precio sugerido (costo × ${factorOf(p)})</span><strong>${money0(sug)}</strong></div>
+      <div class="kv"><span>Precio por porción</span><strong>${money(perSlice)}</strong></div>
+      <div style="margin-top:6px">${marginBadge(p)}</div>
+    </div>`;
+  }
+  el.innerHTML = h;
+}
+
+/* ===== Pestaña: Recetas ===== */
+let recetaSel = null;
+function renderRecetas(){
+  const el = document.getElementById("tab-recetas");
+  if(!recetaSel || !prodById(recetaSel)) recetaSel = state.products[0].id;
+  const p = prodById(recetaSel);
+  const ingOpts = sel => state.ingredients.map(i=>
+    `<option value="${i.id}" ${i.id===sel?"selected":""}>${esc(i.name)} ($${unitCost(i).toFixed(3)}/${i.unit})</option>`).join("");
+  let rows = p.recipe.map((l,idx)=>{
+    const ing = ingById(l.ing);
+    const lc = ing ? l.qty*unitCost(ing) : 0;
+    return `<tr><td>${ing?esc(ing.name):"—"}</td>
+      <td class="num"><input type="number" step="0.1" min="0" value="${l.qty}" data-rl="${idx}" style="width:76px"></td>
+      <td>${ing?ing.unit:""}</td><td class="num">${money(lc)}</td>
+      <td><button class="danger small" data-rdel="${idx}">✕</button></td></tr>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="card">
+      <label class="field"><span>Producto</span>
+        <select id="receta-producto">${state.products.map(x=>
+          `<option value="${x.id}" ${x.id===p.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
+    </div>
+    <div class="card">
+      <h3>Ingredientes <span class="muted">· cantidades de ejemplo</span></h3>
+      <table class="lines"><tr><th>Insumo</th><th class="num">Cant.</th><th>Ud.</th><th class="num">Costo</th><th></th></tr>${rows}</table>
+      <div class="kv" style="margin-top:8px"><span><b>Costo total receta</b></span><strong class="big">${money(recipeCost(p))}</strong></div>
+      <hr class="sep">
+      <div class="row">
+        <select id="nuevo-ing" style="flex:2">${ingOpts()}</select>
+        <input id="nuevo-qty" type="number" step="0.1" min="0" placeholder="Cant." style="flex:1">
+        <button id="add-linea">Añadir</button>
+      </div>
+    </div>`;
+}
+
+/* ===== Pestaña: Insumos ===== */
+function renderInsumos(){
+  const el = document.getElementById("tab-insumos");
+  let h = `<div class="notice">⚠️ <b>Precios de ejemplo.</b> Reemplázalos con lo que realmente pagan. Todo se guarda en este dispositivo.</div>`;
+  for(const ing of state.ingredients){
+    h += `<div class="card" data-ing="${ing.id}">
+      <div class="row">
+        <label class="field" style="flex:2;min-width:140px"><span>Insumo</span>
+          <input value="${esc(ing.name)}" data-if="name"></label>
+        <button class="danger small" data-idel="${ing.id}">✕</button>
+      </div>
+      <div class="grid2" style="margin-top:8px">
+        <label class="field"><span>Precio compra (USD)</span>
+          <input type="number" step="0.01" min="0" value="${ing.price}" data-if="price"></label>
+        <label class="field"><span>Cantidad del envase</span>
+          <input type="number" step="0.01" min="0" value="${ing.pkg}" data-if="pkg"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="field" style="flex:1"><span>Unidad</span>
+          <input value="${esc(ing.unit)}" data-if="unit"></label>
+        <div class="field" style="flex:1"><span class="muted">Costo unitario</span>
+          <div class="big" style="font-size:20px">${money(unitCost(ing))}<span class="muted">/${esc(ing.unit)}</span></div></div>
+      </div>
+    </div>`;
+  }
+  h += `<div class="card"><h3>Añadir insumo</h3>
+    <div class="grid2">
+      <label class="field"><span>Nombre</span><input id="ni-name" placeholder="Ej: Cocoa"></label>
+      <label class="field"><span>Unidad</span><input id="ni-unit" placeholder="taza, oz, und…"></label>
+      <label class="field"><span>Precio compra (USD)</span><input id="ni-price" type="number" step="0.01" min="0"></label>
+      <label class="field"><span>Cantidad del envase</span><input id="ni-pkg" type="number" step="0.01" min="0"></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="ni-add">Añadir insumo</button>
+      <button class="ghost" id="ni-reset">Restablecer ejemplos</button>
+    </div></div>`;
+  el.innerHTML = h;
+}
+
+/* ===== Pestaña: Cotizar (catering) ===== */
+let quote = {productId:null, people:30, perPerson:1, pricePerServing:null, delivery:0};
+function discountFor(people){
+  if(people>=100) return 15;
+  if(people>=50)  return 10;
+  if(people>=30)  return 5;
+  return 0;
+}
+function renderCotizar(){
+  const el = document.getElementById("tab-cotizar");
+  if(!quote.productId || !prodById(quote.productId)) quote.productId = state.products[0].id;
+  const p = prodById(quote.productId);
+  const baseSlice = p.price!=null ? p.price/p.portions : suggested(p)/p.portions;
+  if(quote.pricePerServing==null) quote.pricePerServing = Math.round(baseSlice*100)/100;
+  const servings = quote.people*quote.perPerson;
+  const subtotal = servings*quote.pricePerServing;
+  const disc = discountFor(quote.people);
+  const discAmt = subtotal*disc/100;
+  const total = subtotal-discAmt+quote.delivery;
+  el.innerHTML = `
+    <div class="card">
+      <label class="field"><span>Producto</span>
+        <select id="q-product">${state.products.map(x=>
+          `<option value="${x.id}" ${x.id===p.id?"selected":""}>${esc(x.name)}${x.price!=null?" — "+money0(x.price):""}</option>`).join("")}</select></label>
+      <div class="grid2" style="margin-top:8px">
+        <label class="field"><span>Personas</span>
+          <input id="q-people" type="number" step="1" min="1" value="${quote.people}"></label>
+        <label class="field"><span>Porciones por persona</span>
+          <input id="q-perperson" type="number" step="0.5" min="0.5" value="${quote.perPerson}"></label>
+        <label class="field"><span>Precio por porción (USD)</span>
+          <input id="q-pps" type="number" step="0.05" min="0" value="${quote.pricePerServing}"></label>
+        <label class="field"><span>Delivery (USD)</span>
+          <input id="q-delivery" type="number" step="0.5" min="0" value="${quote.delivery}"></label>
+      </div>
+      <div class="muted" style="margin-top:6px">Total porciones: <b>${servings}</b> · Descuento automático: 30–49 → 5% · 50–99 → 10% · 100+ → 15%</div>
+    </div>
+    <div class="card">
+      <div class="kv"><span>Subtotal (${servings} × ${money(quote.pricePerServing)})</span><strong>${money(subtotal)}</strong></div>
+      <div class="kv"><span>Descuento por volumen (${disc}%)</span><strong>−${money(discAmt)}</strong></div>
+      <div class="kv"><span>Delivery</span><strong>${money(quote.delivery)}</strong></div>
+      <div class="total-row"><span><b>TOTAL</b></span><span class="big">${money(total)}</span></div>
+      <div class="row" style="margin-top:10px">
+        <button id="q-copy" style="flex:1">📋 Copiar cotización</button>
+      </div>
+      <div id="q-ok" class="copy-ok" style="margin-top:6px"></div>
+    </div>`;
+  const txt =
+`Cotización — Sweets of the Heart 🧁
+Producto: ${p.name}
+Personas: ${quote.people} (${quote.perPerson} porción c/u = ${servings} porciones)
+Precio por porción: ${money(quote.pricePerServing)}
+Subtotal: ${money(subtotal)}
+Descuento por volumen (${disc}%): −${money(discAmt)}
+Delivery: ${money(quote.delivery)}
+TOTAL: ${money(total)}`;
+  document.getElementById("q-copy").onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(txt);
+      document.getElementById("q-ok").textContent = "✓ Copiada, lista para pegar en WhatsApp";
+    }catch(e){ document.getElementById("q-ok").textContent = "No se pudo copiar: "+txt; }
+  };
+}
+
+/* ===== Render general + eventos ===== */
+function renderAll(){ renderProductos(); renderRecetas(); renderInsumos(); renderCotizar(); }
+
+document.querySelectorAll("nav#tabs button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("nav#tabs button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll("section.tab").forEach(s=>s.classList.remove("active"));
+    document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+    window.scrollTo(0,0);
+  };
+});
+
+document.addEventListener("change", e=>{
+  const t = e.target;
+  if(t.dataset.edit==="factor"){ state.factor = parseFloat(t.value)||3.5; save(); renderAll(); return; }
+  const pc = t.closest("[data-product]");
+  if(pc && t.dataset.pf){
+    const p = prodById(pc.dataset.product); const f = t.dataset.pf;
+    let v = t.value==="" ? null : parseFloat(t.value);
+    if(f==="price") p.price = (v==null||isNaN(v)) ? null : v;
+    if(f==="portions") p.portions = Math.max(1, Math.round(v)||1);
+    if(f==="packaging") p.packaging = isNaN(v)?0:v;
+    if(f==="factor") p.factor = (v==null||isNaN(v)) ? null : v;
+    save(); renderAll(); return;
+  }
+  const ic = t.closest("[data-ing]");
+  if(ic && t.dataset.if){
+    const ing = ingById(ic.dataset.ing); const f = t.dataset.if;
+    if(f==="name"||f==="unit") ing[f]=t.value;
+    else ing[f]=parseFloat(t.value)||0;
+    save(); renderAll(); return;
+  }
+  if(t.id==="receta-producto"){ recetaSel=t.value; renderRecetas(); return; }
+  if(t.id==="q-product"){ quote.productId=t.value; quote.pricePerServing=null; save(); renderCotizar(); return; }
+  if(t.id==="q-people"){ quote.people=Math.max(1,Math.round(parseFloat(t.value)||1)); renderCotizar(); return; }
+  if(t.id==="q-perperson"){ quote.perPerson=parseFloat(t.value)||1; renderCotizar(); return; }
+  if(t.id==="q-pps"){ quote.pricePerServing=parseFloat(t.value)||0; renderCotizar(); return; }
+  if(t.id==="q-delivery"){ quote.delivery=parseFloat(t.value)||0; renderCotizar(); return; }
+  if(t.dataset.rl!==undefined){
+    const p = prodById(recetaSel);
+    p.recipe[+t.dataset.rl].qty = parseFloat(t.value)||0;
+    save(); renderRecetas(); renderProductos(); return;
+  }
+});
+
+document.addEventListener("click", e=>{
+  const t = e.target;
+  if(t.id==="add-linea"){
+    const p = prodById(recetaSel);
+    const ingId = document.getElementById("nuevo-ing").value;
+    const qty = parseFloat(document.getElementById("nuevo-qty").value)||0;
+    if(ingId && qty>0){ p.recipe.push({ing:ingId, qty}); save(); renderRecetas(); renderProductos(); }
+    return;
+  }
+  if(t.dataset.rdel!==undefined){
+    const p = prodById(recetaSel);
+    p.recipe.splice(+t.dataset.rdel,1); save(); renderRecetas(); renderProductos(); return;
+  }
+  if(t.dataset.idel){
+    const id = t.dataset.idel;
+    if(confirm("¿Eliminar este insumo? Se quitará también de las recetas.")){
+      state.ingredients = state.ingredients.filter(i=>i.id!==id);
+      state.products.forEach(p=>p.recipe=p.recipe.filter(l=>l.ing!==id));
+      save(); renderAll();
+    }
+    return;
+  }
+  if(t.id==="ni-add"){
+    const name=document.getElementById("ni-name").value.trim();
+    const unit=document.getElementById("ni-unit").value.trim()||"und";
+    const price=parseFloat(document.getElementById("ni-price").value)||0;
+    const pkg=parseFloat(document.getElementById("ni-pkg").value)||0;
+    if(!name||pkg<=0){ alert("Nombre y cantidad del envase son obligatorios."); return; }
+    state.ingredients.push({id:"ing-"+Date.now(), name, price, pkg, unit});
+    save(); renderAll(); return;
+  }
+  if(t.id==="ni-reset"){ resetData(); return; }
+});
+
+/* ===== Init ===== */
+load();
+renderAll();
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
