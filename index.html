@@ -237,7 +237,7 @@ function renderRecetas(){
 /* ===== Pestaña: Insumos ===== */
 function renderInsumos(){
   const el = document.getElementById("tab-insumos");
-  let h = `<div class="notice">⚠️ <b>Precios de ejemplo.</b> Reemplázalos con lo que realmente pagan. Todo se guarda en este dispositivo.</div>`;
+  let h = `<div class="notice">⚠️ <b>Precios de ejemplo.</b> Reemplázalos con lo que realmente pagan. Todo se guarda en este dispositivo.<br><b>Cantidad del envase</b> = cuántas unidades trae lo que compraste, medidas en la <b>misma unidad que usa la receta</b>. Ej: huevos 12 und · harina 20 tazas · leche 16 tazas (1 galón).</div>`;
   for(const ing of state.ingredients){
     h += `<div class="card" data-ing="${ing.id}">
       <div class="row">
@@ -248,11 +248,11 @@ function renderInsumos(){
       <div class="grid2" style="margin-top:8px">
         <label class="field"><span>Precio compra (USD)</span>
           <input type="number" step="0.01" min="0" value="${ing.price}" data-if="price"></label>
-        <label class="field"><span>Cantidad del envase</span>
+        <label class="field"><span>Cantidad del envase <span class="muted" style="font-weight:400">· en la unidad de abajo</span></span>
           <input type="number" step="0.01" min="0" value="${ing.pkg}" data-if="pkg"></label>
       </div>
       <div class="row" style="margin-top:8px">
-        <label class="field" style="flex:1"><span>Unidad</span>
+        <label class="field" style="flex:1"><span>Unidad <span class="muted" style="font-weight:400">· la misma que usa la receta</span></span>
           <input value="${esc(ing.unit)}" data-if="unit"></label>
         <div class="field" style="flex:1"><span class="muted">Costo unitario</span>
           <div class="big" style="font-size:20px">${money(unitCost(ing))}<span class="muted">/${esc(ing.unit)}</span></div></div>
@@ -264,7 +264,7 @@ function renderInsumos(){
       <label class="field"><span>Nombre</span><input id="ni-name" placeholder="Ej: Cocoa"></label>
       <label class="field"><span>Unidad</span><input id="ni-unit" placeholder="taza, oz, und…"></label>
       <label class="field"><span>Precio compra (USD)</span><input id="ni-price" type="number" step="0.01" min="0"></label>
-      <label class="field"><span>Cantidad del envase</span><input id="ni-pkg" type="number" step="0.01" min="0"></label>
+      <label class="field"><span>Cantidad del envase <span class="muted" style="font-weight:400">· en la unidad de arriba</span></span><input id="ni-pkg" type="number" step="0.01" min="0"></label>
     </div>
     <div class="row" style="margin-top:10px">
       <button id="ni-add">Añadir insumo</button>
