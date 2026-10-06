@@ -92,43 +92,68 @@ nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
 const SEED = {
   factor: 3.5,
   ingredients: [
-    {id:"harina",   name:"Harina todo uso",      price:4.50, pkg:20,   unit:"taza"},
-    {id:"azucar",   name:"Azúcar granulada",     price:3.80, pkg:9,    unit:"taza"},
+    {id:"harina",   name:"Harina todo uso",      price:4.50, pkg:5,    unit:"lb",    density:120},
+    {id:"azucar",   name:"Azúcar granulada",     price:3.80, pkg:4,    unit:"lb",    density:200},
     {id:"huevos",   name:"Huevos",               price:4.20, pkg:12,   unit:"und"},
-    {id:"manteq",   name:"Mantequilla",          price:4.50, pkg:2,    unit:"taza"},
-    {id:"lcond",    name:"Leche condensada",     price:2.20, pkg:1.75, unit:"taza"},
-    {id:"levap",    name:"Leche evaporada",      price:1.80, pkg:1.5,  unit:"taza"},
-    {id:"crema",    name:"Crema para batir",     price:4.00, pkg:2,    unit:"taza"},
-    {id:"limon",    name:"Limones",              price:0.50, pkg:1,    unit:"und"},
-    {id:"framb",    name:"Frambuesas",           price:4.00, pkg:6,    unit:"oz"},
-    {id:"marac",    name:"Pulpa de maracuyá",    price:5.00, pkg:14,   unit:"oz"},
-    {id:"fruta",    name:"Fruta mixta",          price:5.00, pkg:32,   unit:"oz"},
-    {id:"aglass",   name:"Azúcar glass",         price:3.00, pkg:8,    unit:"taza"},
-    {id:"vain",     name:"Vainilla",             price:6.00, pkg:12,   unit:"cdta"},
-    {id:"phornear", name:"Polvo de hornear",     price:3.50, pkg:20,   unit:"cdta"},
+    {id:"manteq",   name:"Mantequilla",          price:4.50, pkg:1,    unit:"lb",    density:227},
+    {id:"lcond",    name:"Leche condensada",     price:2.20, pkg:14,   unit:"oz",    density:310},
+    {id:"levap",    name:"Leche evaporada",      price:1.80, pkg:12,   unit:"oz",    density:252},
+    {id:"crema",    name:"Crema para batir",     price:4.00, pkg:16,   unit:"fl oz", density:240},
+    {id:"limon",    name:"Limones",              price:3.00, pkg:6,    unit:"und"},
+    {id:"framb",    name:"Frambuesas",           price:4.00, pkg:6,    unit:"oz",    density:120},
+    {id:"marac",    name:"Pulpa de maracuyá",    price:5.00, pkg:14,   unit:"oz",    density:240},
+    {id:"fruta",    name:"Fruta mixta",          price:5.00, pkg:2,    unit:"lb",    density:150},
+    {id:"aglass",   name:"Azúcar glass",         price:3.00, pkg:2,    unit:"lb",    density:120},
+    {id:"vain",     name:"Vainilla",             price:6.00, pkg:2,    unit:"fl oz", density:208},
+    {id:"phornear", name:"Polvo de hornear",     price:3.50, pkg:10,   unit:"oz",    density:220},
     {id:"caja9",    name:"Caja para pie 9\u2033", price:1.50, pkg:1,    unit:"und"},
     {id:"base10",   name:"Base dorada 10\u2033",  price:0.80, pkg:1,    unit:"und"}
   ],
   products: [
     {id:"pie-limon",  name:"Lemon Meringue Pie",  price:23,   portions:8,  packaging:1.50, recipe:[
-      {ing:"harina",qty:2},{ing:"manteq",qty:0.5},{ing:"azucar",qty:1.5},{ing:"huevos",qty:4},{ing:"limon",qty:6},{ing:"aglass",qty:1}]},
+      {ing:"harina",qty:2,unit:"taza"},{ing:"manteq",qty:0.5,unit:"taza"},{ing:"azucar",qty:1.5,unit:"taza"},{ing:"huevos",qty:4,unit:"und"},{ing:"limon",qty:6,unit:"und"},{ing:"aglass",qty:1,unit:"taza"}]},
     {id:"pie-framb",  name:"Raspberry Pie",       price:23,   portions:8,  packaging:1.50, recipe:[
-      {ing:"harina",qty:2},{ing:"manteq",qty:0.5},{ing:"azucar",qty:1},{ing:"huevos",qty:2},{ing:"framb",qty:12}]},
+      {ing:"harina",qty:2,unit:"taza"},{ing:"manteq",qty:0.5,unit:"taza"},{ing:"azucar",qty:1,unit:"taza"},{ing:"huevos",qty:2,unit:"und"},{ing:"framb",qty:12,unit:"oz"}]},
     {id:"pie-marac",  name:"Passion Fruit Pie",   price:25,   portions:8,  packaging:1.50, recipe:[
-      {ing:"harina",qty:2},{ing:"manteq",qty:0.5},{ing:"azucar",qty:1.25},{ing:"huevos",qty:4},{ing:"marac",qty:14}]},
+      {ing:"harina",qty:2,unit:"taza"},{ing:"manteq",qty:0.5,unit:"taza"},{ing:"azucar",qty:1.25,unit:"taza"},{ing:"huevos",qty:4,unit:"und"},{ing:"marac",qty:14,unit:"oz"}]},
     {id:"tart-frut",  name:"Fruit Tart",          price:20,   portions:8,  packaging:1.50, recipe:[
-      {ing:"harina",qty:1.5},{ing:"manteq",qty:0.4},{ing:"azucar",qty:0.75},{ing:"huevos",qty:3},{ing:"crema",qty:1},{ing:"fruta",qty:16}]},
+      {ing:"harina",qty:1.5,unit:"taza"},{ing:"manteq",qty:0.5,unit:"taza"},{ing:"azucar",qty:0.75,unit:"taza"},{ing:"huevos",qty:3,unit:"und"},{ing:"crema",qty:8,unit:"fl oz"},{ing:"fruta",qty:16,unit:"oz"}]},
     {id:"treslech",   name:"Tres Leches Desserts",price:30,   portions:12, packaging:2.00, recipe:[
-      {ing:"harina",qty:2},{ing:"azucar",qty:1.5},{ing:"huevos",qty:6},{ing:"lcond",qty:1.75},{ing:"levap",qty:1.5},{ing:"crema",qty:2},{ing:"vain",qty:1}]},
+      {ing:"harina",qty:2,unit:"taza"},{ing:"azucar",qty:1.5,unit:"taza"},{ing:"huevos",qty:6,unit:"und"},{ing:"lcond",qty:14,unit:"oz"},{ing:"levap",qty:12,unit:"oz"},{ing:"crema",qty:16,unit:"fl oz"},{ing:"vain",qty:1,unit:"cdta"}]},
     {id:"brazo",      name:"Swiss Roll / Cake",   price:20,   portions:10, packaging:1.50, recipe:[
-      {ing:"harina",qty:1},{ing:"azucar",qty:1},{ing:"huevos",qty:5},{ing:"vain",qty:1},{ing:"aglass",qty:0.5}]},
+      {ing:"harina",qty:1,unit:"taza"},{ing:"azucar",qty:1,unit:"taza"},{ing:"huevos",qty:5,unit:"und"},{ing:"vain",qty:1,unit:"cdta"},{ing:"aglass",qty:0.5,unit:"taza"}]},
     {id:"custom",     name:"Custom Cakes",        price:null, portions:12, packaging:3.00, recipe:[
-      {ing:"harina",qty:3},{ing:"azucar",qty:2},{ing:"huevos",qty:6},{ing:"manteq",qty:0.5},{ing:"vain",qty:2}]}
+      {ing:"harina",qty:3,unit:"taza"},{ing:"azucar",qty:2,unit:"taza"},{ing:"huevos",qty:6,unit:"und"},{ing:"manteq",qty:0.5,unit:"taza"},{ing:"vain",qty:2,unit:"cdta"}]}
   ]
 };
 
+/* ===== Unidades: todo se convierte a gramos para calcular el costo ===== */
+const UNITS = ["und","g","oz","lb","kg","ml","cdta","cda","fl oz","taza","L","galón"];
+const WEIGHT_G = {g:1, oz:28.3495, lb:453.592, kg:1000};
+const VOL_ML = {ml:1, cdta:4.92892, cda:14.7868, "fl oz":29.5735, taza:236.588, L:1000, "galón":3785.41};
+const unitKind = u => u==="und" ? "count" : (u in WEIGHT_G ? "weight" : "volume");
+function toGrams(qty, unit, density){
+  const k = unitKind(unit);
+  if(k==="count") return null;
+  if(k==="weight") return qty*WEIGHT_G[unit];
+  return qty*VOL_ML[unit]/236.588*(density||240); /* density = gramos por taza */
+}
+function lineCost(l){
+  const ing = ingById(l.ing);
+  if(!ing) return {cost:0, ok:false};
+  const ku = unitKind(ing.unit), kl = unitKind(l.unit||ing.unit);
+  if(ku==="count" || kl==="count"){
+    if(ing.unit!==(l.unit||ing.unit)) return {cost:0, ok:false};
+    return {cost: ing.pkg>0 ? (l.qty||0)*ing.price/ing.pkg : 0, ok:true};
+  }
+  const dens = ing.density||240;
+  const pkgG = toGrams(ing.pkg, ing.unit, dens), qtyG = toGrams(l.qty||0, l.unit||ing.unit, dens);
+  if(!pkgG || !qtyG || pkgG<=0) return {cost:0, ok:false};
+  return {cost: qtyG*ing.price/pkgG, ok:true, approx: ku!==kl && !ing.density};
+}
+
 /* ===== Estado ===== */
-const KEY = "soth-data-v1";
+const KEY = "soth-data-v2";
 let state;
 function load(){
   try{
@@ -149,7 +174,7 @@ const ingById = id => state.ingredients.find(i=>i.id===id);
 const prodById = id => state.products.find(p=>p.id===id);
 const unitCost = ing => ing.pkg > 0 ? ing.price/ing.pkg : 0;
 function recipeCost(p){
-  return p.recipe.reduce((s,l)=>{ const ing=ingById(l.ing); return s + (ing? l.qty*unitCost(ing):0); },0);
+  return p.recipe.reduce((s,l)=> s + lineCost(l).cost, 0);
 }
 const totalCost = p => recipeCost(p) + (p.packaging||0);
 const factorOf = p => p.factor || state.factor;
@@ -164,6 +189,7 @@ function marginBadge(p){
   return `<span class="badge bad">bajo el sugerido (${money0(s)})</span>`;
 }
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const unitOpts = sel => UNITS.map(u=>`<option value="${u}" ${u===sel?"selected":""}>${u}</option>`).join("");
 
 /* ===== Pestaña: Productos ===== */
 function renderProductos(){
@@ -206,13 +232,17 @@ function renderRecetas(){
   if(!recetaSel || !prodById(recetaSel)) recetaSel = state.products[0].id;
   const p = prodById(recetaSel);
   const ingOpts = sel => state.ingredients.map(i=>
-    `<option value="${i.id}" ${i.id===sel?"selected":""}>${esc(i.name)} ($${unitCost(i).toFixed(3)}/${i.unit})</option>`).join("");
+    `<option value="${i.id}" ${i.id===sel?"selected":""}>${esc(i.name)} (${money(unitCost(i))}/${i.unit})</option>`).join("");
   let rows = p.recipe.map((l,idx)=>{
     const ing = ingById(l.ing);
-    const lc = ing ? l.qty*unitCost(ing) : 0;
+    const lu = l.unit || (ing?ing.unit:"und");
+    const r = lineCost(l);
+    const costCell = !r.ok ? `<span title="Unidades incompatibles">⚠</span>`
+      : (r.approx ? "≈"+money(r.cost) : money(r.cost));
     return `<tr><td>${ing?esc(ing.name):"—"}</td>
-      <td class="num"><input type="number" step="0.1" min="0" value="${l.qty}" data-rl="${idx}" style="width:76px"></td>
-      <td>${ing?ing.unit:""}</td><td class="num">${money(lc)}</td>
+      <td class="num"><input type="number" step="0.1" min="0" value="${l.qty}" data-rl="${idx}" style="width:64px"></td>
+      <td><select data-rlu="${idx}" style="padding:8px 4px">${unitOpts(lu)}</select></td>
+      <td class="num">${costCell}</td>
       <td><button class="danger small" data-rdel="${idx}">✕</button></td></tr>`;
   }).join("");
   el.innerHTML = `
@@ -229,6 +259,7 @@ function renderRecetas(){
       <div class="row">
         <select id="nuevo-ing" style="flex:2">${ingOpts()}</select>
         <input id="nuevo-qty" type="number" step="0.1" min="0" placeholder="Cant." style="flex:1">
+        <select id="nuevo-unit" style="flex:1">${unitOpts("taza")}</select>
         <button id="add-linea">Añadir</button>
       </div>
     </div>`;
@@ -237,7 +268,8 @@ function renderRecetas(){
 /* ===== Pestaña: Insumos ===== */
 function renderInsumos(){
   const el = document.getElementById("tab-insumos");
-  let h = `<div class="notice">⚠️ <b>Precios de ejemplo.</b> Reemplázalos con lo que realmente pagan. Todo se guarda en este dispositivo.<br><b>Cantidad del envase</b> = cuántas unidades trae lo que compraste, medidas en la <b>misma unidad que usa la receta</b>. Ej: huevos 12 und · harina 20 tazas · leche 16 tazas (1 galón).</div>`;
+  let h = `<div class="notice">⚠️ <b>Precios de ejemplo.</b> Reemplázalos con lo que realmente pagan. Todo se guarda en este dispositivo.<br>
+    Pon el <b>tamaño tal como sale en la etiqueta</b> (5 lb, 12 und, 1 galón). En la receta pones lo que usas (2 tazas) y la app convierte sola.</div>`;
   for(const ing of state.ingredients){
     h += `<div class="card" data-ing="${ing.id}">
       <div class="row">
@@ -248,23 +280,24 @@ function renderInsumos(){
       <div class="grid2" style="margin-top:8px">
         <label class="field"><span>Precio compra (USD)</span>
           <input type="number" step="0.01" min="0" value="${ing.price}" data-if="price"></label>
-        <label class="field"><span>Cantidad del envase <span class="muted" style="font-weight:400">· en la unidad de abajo</span></span>
+        <label class="field"><span>Cantidad del envase</span>
           <input type="number" step="0.01" min="0" value="${ing.pkg}" data-if="pkg"></label>
       </div>
-      <div class="row" style="margin-top:8px">
-        <label class="field" style="flex:1"><span>Unidad <span class="muted" style="font-weight:400">· la misma que usa la receta</span></span>
-          <input value="${esc(ing.unit)}" data-if="unit"></label>
-        <div class="field" style="flex:1"><span class="muted">Costo unitario</span>
-          <div class="big" style="font-size:20px">${money(unitCost(ing))}<span class="muted">/${esc(ing.unit)}</span></div></div>
+      <div class="grid2" style="margin-top:8px">
+        <label class="field"><span>Unidad <span class="muted" style="font-weight:400">· como sale en la etiqueta</span></span>
+          <select data-if="unit">${unitOpts(ing.unit)}</select></label>
+        <label class="field"><span>g por taza <span class="muted" style="font-weight:400">· opcional</span></span>
+          <input type="number" step="1" min="0" placeholder="240" value="${ing.density??""}" data-if="density"></label>
       </div>
+      <div class="muted" style="margin-top:6px">Costo: <b>${money(unitCost(ing))}/${esc(ing.unit)}</b></div>
     </div>`;
   }
   h += `<div class="card"><h3>Añadir insumo</h3>
     <div class="grid2">
       <label class="field"><span>Nombre</span><input id="ni-name" placeholder="Ej: Cocoa"></label>
-      <label class="field"><span>Unidad</span><input id="ni-unit" placeholder="taza, oz, und…"></label>
+      <label class="field"><span>Unidad (etiqueta)</span><select id="ni-unit">${unitOpts("und")}</select></label>
       <label class="field"><span>Precio compra (USD)</span><input id="ni-price" type="number" step="0.01" min="0"></label>
-      <label class="field"><span>Cantidad del envase <span class="muted" style="font-weight:400">· en la unidad de arriba</span></span><input id="ni-pkg" type="number" step="0.01" min="0"></label>
+      <label class="field"><span>Cantidad del envase</span><input id="ni-pkg" type="number" step="0.01" min="0"></label>
     </div>
     <div class="row" style="margin-top:10px">
       <button id="ni-add">Añadir insumo</button>
@@ -365,10 +398,15 @@ document.addEventListener("change", e=>{
   if(ic && t.dataset.if){
     const ing = ingById(ic.dataset.ing); const f = t.dataset.if;
     if(f==="name"||f==="unit") ing[f]=t.value;
+    else if(f==="density") ing.density = t.value==="" ? null : (parseFloat(t.value)||null);
     else ing[f]=parseFloat(t.value)||0;
     save(); renderAll(); return;
   }
   if(t.id==="receta-producto"){ recetaSel=t.value; renderRecetas(); return; }
+  if(t.dataset.rlu!==undefined){
+    prodById(recetaSel).recipe[+t.dataset.rlu].unit = t.value;
+    save(); renderRecetas(); renderProductos(); return;
+  }
   if(t.id==="q-product"){ quote.productId=t.value; quote.pricePerServing=null; save(); renderCotizar(); return; }
   if(t.id==="q-people"){ quote.people=Math.max(1,Math.round(parseFloat(t.value)||1)); renderCotizar(); return; }
   if(t.id==="q-perperson"){ quote.perPerson=parseFloat(t.value)||1; renderCotizar(); return; }
@@ -387,7 +425,8 @@ document.addEventListener("click", e=>{
     const p = prodById(recetaSel);
     const ingId = document.getElementById("nuevo-ing").value;
     const qty = parseFloat(document.getElementById("nuevo-qty").value)||0;
-    if(ingId && qty>0){ p.recipe.push({ing:ingId, qty}); save(); renderRecetas(); renderProductos(); }
+    const unit = document.getElementById("nuevo-unit").value;
+    if(ingId && qty>0){ p.recipe.push({ing:ingId, qty, unit}); save(); renderRecetas(); renderProductos(); }
     return;
   }
   if(t.dataset.rdel!==undefined){
@@ -405,7 +444,7 @@ document.addEventListener("click", e=>{
   }
   if(t.id==="ni-add"){
     const name=document.getElementById("ni-name").value.trim();
-    const unit=document.getElementById("ni-unit").value.trim()||"und";
+    const unit=document.getElementById("ni-unit").value;
     const price=parseFloat(document.getElementById("ni-price").value)||0;
     const pkg=parseFloat(document.getElementById("ni-pkg").value)||0;
     if(!name||pkg<=0){ alert("Nombre y cantidad del envase son obligatorios."); return; }
