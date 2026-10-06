@@ -254,6 +254,7 @@ function renderRecetas(){
     <div class="card">
       <h3>Ingredientes <span class="muted">· cantidades de ejemplo</span></h3>
       <table class="lines"><tr><th>Insumo</th><th class="num">Cant.</th><th>Ud.</th><th class="num">Costo</th><th></th></tr>${rows}</table>
+      <div class="muted" style="margin:6px 0 0">≈ = conversión aproximada entre peso y volumen</div>
       <div class="kv" style="margin-top:8px"><span><b>Costo total receta</b></span><strong class="big">${money(recipeCost(p))}</strong></div>
       <hr class="sep">
       <div class="row">
@@ -283,12 +284,8 @@ function renderInsumos(){
         <label class="field"><span>Cantidad del envase</span>
           <input type="number" step="0.01" min="0" value="${ing.pkg}" data-if="pkg"></label>
       </div>
-      <div class="grid2" style="margin-top:8px">
-        <label class="field"><span>Unidad <span class="muted" style="font-weight:400">· como sale en la etiqueta</span></span>
-          <select data-if="unit">${unitOpts(ing.unit)}</select></label>
-        <label class="field"><span>g por taza <span class="muted" style="font-weight:400">· opcional</span></span>
-          <input type="number" step="1" min="0" placeholder="240" value="${ing.density??""}" data-if="density"></label>
-      </div>
+      <label class="field" style="margin-top:8px"><span>Unidad <span class="muted" style="font-weight:400">· como sale en la etiqueta</span></span>
+        <select data-if="unit">${unitOpts(ing.unit)}</select></label>
       <div class="muted" style="margin-top:6px">Costo: <b>${money(unitCost(ing))}/${esc(ing.unit)}</b></div>
     </div>`;
   }
@@ -398,7 +395,6 @@ document.addEventListener("change", e=>{
   if(ic && t.dataset.if){
     const ing = ingById(ic.dataset.ing); const f = t.dataset.if;
     if(f==="name"||f==="unit") ing[f]=t.value;
-    else if(f==="density") ing.density = t.value==="" ? null : (parseFloat(t.value)||null);
     else ing[f]=parseFloat(t.value)||0;
     save(); renderAll(); return;
   }
