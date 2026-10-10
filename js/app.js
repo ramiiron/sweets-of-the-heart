@@ -1,4 +1,5 @@
 "use strict";
+const APP_VERSION = "1.2.0";
 /* ===== Datos iniciales (precios reales del flyer; insumos y recetas son EJEMPLOS) ===== */
 const SEED = {
   marginPct: 40,
@@ -607,6 +608,8 @@ document.addEventListener("click", e=>{
 });
 
 /* ===== Init ===== */
+const verEl = document.getElementById("app-version");
+if(verEl) verEl.textContent = "v"+APP_VERSION;
 load();
 renderAll();
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
