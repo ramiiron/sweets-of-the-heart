@@ -1,4 +1,4 @@
-const CACHE = "soth-v5";
+const CACHE = "soth-v6";
 const ASSETS = ["./", "./index.html", "./css/styles.css", "./js/app.js",
   "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 

@@ -133,7 +133,7 @@ function renderProductos(){
         <label class="field"><span>Gastos indirectos (%)</span>
           <input type="number" step="1" min="0" value="${state.overheadPct}" data-edit="overheadPct"></label>
       </div>
-      <div class="muted">Precio sugerido = costo total (insumos + empaque + decoración + mano de obra + indirectos) + tu ganancia. Sin multiplicadores escondidos.</div>
+      <div class="muted">Precio sugerido = costo total (todo incluido) + tu ganancia.</div>
     </div>`;
   for(const p of state.products){
     const sug = suggested(p), b = costBreakdown(p);
@@ -156,7 +156,7 @@ function renderProductos(){
       <div class="kv"><span>Insumos (receta)</span><strong>${money(b.r)}</strong></div>
       <div class="kv"><span>Mano de obra (${p.laborHours||0} h × ${money(state.hourlyRate)})</span><strong>${money(b.lab)}</strong></div>
       <div class="kv"><span>Empaque + decoración + indirectos (${state.overheadPct}%)</span><strong>${money(b.pack+b.dec+b.oh)}</strong></div>
-      <div class="kv"><span>Costo total (todo incluido)</span><strong>${money(b.total)}</strong></div>
+      <div class="cost-total"><span>COSTO TOTAL</span><span class="big">${money(b.total)}</span></div>
       <div class="kv"><span>Precio sugerido (costo + ${state.marginPct}% de ganancia)</span><strong>${money0(sug)}</strong></div>
       <div class="kv"><span>Precio por porción</span><strong>${money(perSlice)}</strong></div>
       <div style="margin-top:6px">${marginBadge(p)}</div>
