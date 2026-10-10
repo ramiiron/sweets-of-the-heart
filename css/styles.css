@@ -1,0 +1,69 @@
+:root{
+  --cream:#FFF9F2; --card:#FFFFFF; --choc:#4E342E; --choc-soft:#6D4C41;
+  --cinnamon:#C97B4A; --caramel:#E8A75C; --rose:#D96C75;
+  --green:#4C8056; --yellow:#B98A2F; --red:#B64848;
+  --line:#F0E4D4; --muted:#8D7B6E; --radius:16px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--cream); color:var(--choc); padding-bottom:92px}
+header{background:linear-gradient(135deg,var(--choc),#6D4C41); color:#FFF6EA;
+  padding:20px 18px 16px; position:sticky; top:0; z-index:10}
+header h1{margin:0; font-size:20px; letter-spacing:.3px}
+header p{margin:4px 0 0; font-size:13px; opacity:.85}
+main{padding:14px 14px 0; max-width:720px; margin:0 auto}
+section.tab{display:none}
+section.tab.active{display:block; animation:fade .18s ease}
+@keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(78,52,46,.06)}
+.card h3{margin:0 0 8px; font-size:16px}
+.row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+label.field{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+label.field span{display:block; margin-bottom:3px}
+input,select{width:100%; font-size:16px; padding:10px 12px; border:1.5px solid var(--line);
+  border-radius:12px; background:#FFFEFB; color:var(--choc)}
+input:focus,select:focus{outline:none; border-color:var(--cinnamon)}
+button{font-size:15px; border:none; border-radius:12px; padding:11px 16px; cursor:pointer;
+  background:var(--cinnamon); color:#fff; font-weight:600}
+button.ghost{background:#F7EFE4; color:var(--choc)}
+button.danger{background:#FBE9E7; color:var(--red)}
+button.small{padding:7px 10px; font-size:13px}
+.big{font-size:26px; font-weight:800}
+.muted{color:var(--muted); font-size:13px}
+.badge{display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px}
+.badge.ok{background:#E6F2E8; color:var(--green)}
+.badge.warn{background:#FBF3DC; color:var(--yellow)}
+.badge.bad{background:#FBE7E7; color:var(--red)}
+.badge.info{background:#F3E9DC; color:var(--choc-soft)}
+.kv{display:flex; justify-content:space-between; padding:5px 0; font-size:14px}
+.kv strong{font-variant-numeric:tabular-nums}
+hr.sep{border:none; border-top:1px solid var(--line); margin:10px 0}
+table.lines{width:100%; border-collapse:collapse; font-size:14px}
+table.lines td, table.lines th{padding:8px 4px; border-bottom:1px solid var(--line); text-align:left}
+table.lines th{font-size:12px; color:var(--muted); font-weight:600}
+.num{text-align:right; font-variant-numeric:tabular-nums}
+nav#tabs{position:fixed; bottom:0; left:0; right:0; z-index:20; background:#FFFDF9;
+  border-top:1px solid var(--line); display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+nav#tabs button{flex:1; background:none; color:var(--muted); font-size:11px; font-weight:600;
+  padding:8px 2px; border-radius:10px; display:flex; flex-direction:column; align-items:center; gap:3px}
+nav#tabs button .ico{font-size:20px}
+nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
+.notice{background:#FBF3DC; border:1px solid #EAD9A8; color:#7A5B16; border-radius:12px;
+  padding:10px 12px; font-size:13px; margin-bottom:12px}
+.total-row{background:var(--choc); color:#FFF6EA; border-radius:12px; padding:12px 14px;
+  display:flex; justify-content:space-between; align-items:center; margin-top:10px}
+.total-row .big{color:#FFDFAE}
+.copy-ok{color:var(--green); font-size:13px; font-weight:600}
+#print-area{display:none}
+@media print{
+  body{background:#fff; padding:0}
+  header,main,nav#tabs{display:none!important}
+  #print-area{display:block; padding:24px; color:#222; font-size:14px}
+  #print-area h1{font-size:22px; margin:0 0 2px}
+  #print-area table{width:100%; border-collapse:collapse; margin:12px 0}
+  #print-area td, #print-area th{border-bottom:1px solid #ddd; padding:7px 4px; text-align:left}
+  #print-area .r{text-align:right}
+  #print-area .tot{font-size:18px; font-weight:800; text-align:right; margin-top:10px}
+}

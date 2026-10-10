@@ -6,7 +6,9 @@ catering con descuentos por volumen.
 
 ## Estructura
 
-- `index.html` — la app completa (una sola página, sin dependencias)
+- `index.html` — estructura de la página (enlaza CSS y JS externos)
+- `css/styles.css` — todos los estilos, incluida la vista de impresión (PDF)
+- `js/app.js` — toda la lógica: datos, cálculos, las 4 pestañas y cotizaciones
 - `manifest.webmanifest` — configuración de instalación como PWA
 - `sw.js` — service worker para uso offline
 - `icons/` — iconos 192 y 512 px
