@@ -56,14 +56,3 @@ nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
   display:flex; justify-content:space-between; align-items:center; margin-top:10px}
 .total-row .big{color:#FFDFAE}
 .copy-ok{color:var(--green); font-size:13px; font-weight:600}
-#print-area{display:none}
-@media print{
-  body{background:#fff; padding:0}
-  header,main,nav#tabs{display:none!important}
-  #print-area{display:block; padding:24px; color:#222; font-size:14px}
-  #print-area h1{font-size:22px; margin:0 0 2px}
-  #print-area table{width:100%; border-collapse:collapse; margin:12px 0}
-  #print-area td, #print-area th{border-bottom:1px solid #ddd; padding:7px 4px; text-align:left}
-  #print-area .r{text-align:right}
-  #print-area .tot{font-size:18px; font-weight:800; text-align:right; margin-top:10px}
-}

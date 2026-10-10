@@ -1,7 +1,7 @@
 "use strict";
 /* ===== Datos iniciales (precios reales del flyer; insumos y recetas son EJEMPLOS) ===== */
 const SEED = {
-  factor: 3.5,
+  marginPct: 40,
   hourlyRate: 15,
   overheadPct: 10,
   quotes: [],
@@ -71,7 +71,7 @@ function lineCost(l){
 const KEY = "soth-data-v2";
 let state;
 function normalize(){
-  if(state.factor==null) state.factor = 3.5;
+  if(state.marginPct==null) state.marginPct = 40;
   if(state.hourlyRate==null) state.hourlyRate = 15;
   if(state.overheadPct==null) state.overheadPct = 10;
   if(!Array.isArray(state.quotes)) state.quotes = [];
@@ -107,16 +107,15 @@ function costBreakdown(p){
   return {r, pack, dec, lab, oh, total: sub+oh};
 }
 const totalCost = p => costBreakdown(p).total;
-const factorOf = p => p.factor || state.factor;
-const suggested = p => Math.round(totalCost(p)*factorOf(p));
+const suggested = p => Math.round(totalCost(p) * (1 + (state.marginPct||0)/100));
 const money = n => "$"+Number(n).toFixed(2);
 const money0 = n => "$"+Math.round(Number(n));
 function marginBadge(p){
   if(p.price==null) return `<span class="badge info">precio a cotizar</span>`;
-  const s = suggested(p), r = p.price/s;
-  if(r>=1)   return `<span class="badge ok">✓ cubre costos ×${factorOf(p)}</span>`;
-  if(r>=0.9) return `<span class="badge warn">margen ajustado</span>`;
-  return `<span class="badge bad">bajo el sugerido (${money0(s)})</span>`;
+  const tc = totalCost(p), s = suggested(p);
+  if(p.price>=s)  return `<span class="badge ok">✓ buen margen</span>`;
+  if(p.price>=tc) return `<span class="badge warn">cubre costos, margen bajo</span>`;
+  return `<span class="badge bad">⚠ no cubre el costo total (${money0(tc)})</span>`;
 }
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const unitOpts = sel => UNITS.map(u=>`<option value="${u}" ${u===sel?"selected":""}>${u}</option>`).join("");
@@ -126,15 +125,15 @@ function renderProductos(){
   const el = document.getElementById("tab-productos");
   let h = `<div class="notice">Precios reales del flyer. Los <b>costos de insumos son ejemplos</b>: actualízalos en la pestaña Insumos.</div>`;
   h += `<div class="card">
-      <label class="field"><span>Factor global (precio = costo total × factor)</span>
-      <input type="number" step="0.1" min="1" value="${state.factor}" data-edit="factor"></label>
+      <label class="field"><span>Ganancia deseada sobre el costo (%)</span>
+      <input type="number" step="1" min="0" value="${state.marginPct}" data-edit="marginPct"></label>
       <div class="grid2">
         <label class="field"><span>Tarifa por hora (mano de obra)</span>
           <input type="number" step="0.5" min="0" value="${state.hourlyRate}" data-edit="hourlyRate"></label>
         <label class="field"><span>Gastos indirectos (%)</span>
           <input type="number" step="1" min="0" value="${state.overheadPct}" data-edit="overheadPct"></label>
       </div>
-      <div class="muted">Costo total = receta + empaque + decoración + mano de obra + indirectos. Si ya incluyes la mano de obra, un factor más bajo (1.5–2) suele bastar.</div>
+      <div class="muted">Precio sugerido = costo total (insumos + empaque + decoración + mano de obra + indirectos) + tu ganancia. Sin multiplicadores escondidos.</div>
     </div>`;
   for(const p of state.products){
     const sug = suggested(p), b = costBreakdown(p);
@@ -148,21 +147,17 @@ function renderProductos(){
           <input type="number" step="1" min="1" value="${p.portions}" data-pf="portions"></label>
         <label class="field"><span>Empaque (USD)</span>
           <input type="number" step="0.1" min="0" value="${p.packaging||0}" data-pf="packaging"></label>
-        <label class="field"><span>Factor (vacío = global)</span>
-          <input type="number" step="0.1" min="1" placeholder="${state.factor}" value="${p.factor??""}" data-pf="factor"></label>
-      </div>
-      <div class="grid2" style="margin-top:8px">
         <label class="field"><span>Decoración (USD)</span>
           <input type="number" step="0.1" min="0" value="${p.decor||0}" data-pf="decor"></label>
-        <label class="field"><span>Mano de obra (horas)</span>
-          <input type="number" step="0.25" min="0" value="${p.laborHours||0}" data-pf="laborHours"></label>
       </div>
+      <label class="field" style="margin-top:8px"><span>Mano de obra (horas)</span>
+        <input type="number" step="0.25" min="0" value="${p.laborHours||0}" data-pf="laborHours"></label>
       <hr class="sep">
-      <div class="kv"><span>Costo receta</span><strong>${money(b.r)}</strong></div>
+      <div class="kv"><span>Insumos (receta)</span><strong>${money(b.r)}</strong></div>
       <div class="kv"><span>Mano de obra (${p.laborHours||0} h × ${money(state.hourlyRate)})</span><strong>${money(b.lab)}</strong></div>
       <div class="kv"><span>Empaque + decoración + indirectos (${state.overheadPct}%)</span><strong>${money(b.pack+b.dec+b.oh)}</strong></div>
-      <div class="kv"><span>Costo total</span><strong>${money(b.total)}</strong></div>
-      <div class="kv"><span>Precio sugerido (costo × ${factorOf(p)})</span><strong>${money0(sug)}</strong></div>
+      <div class="kv"><span>Costo total (todo incluido)</span><strong>${money(b.total)}</strong></div>
+      <div class="kv"><span>Precio sugerido (costo + ${state.marginPct}% de ganancia)</span><strong>${money0(sug)}</strong></div>
       <div class="kv"><span>Precio por porción</span><strong>${money(perSlice)}</strong></div>
       <div style="margin-top:6px">${marginBadge(p)}</div>
     </div>`;
@@ -312,33 +307,105 @@ async function copyText(txt){
   try{ await navigator.clipboard.writeText(txt); alert("Copiada ✓ Lista para pegar en WhatsApp"); }
   catch(e){ alert(txt); }
 }
-function printQuote(q){
+/* ===== PDF: archivo real generado en el dispositivo (sin imprimir) ===== */
+function pdfEscape(s){
+  return String(s).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+}
+function toPdfBytes(str){
+  const bytes = [];
+  for(const ch of String(str)){
+    const cp = ch.codePointAt(0);
+    if(cp < 128) bytes.push(cp);
+    else if(cp >= 0xA0 && cp <= 0xFF) bytes.push(cp);
+    else if(cp === 0x2022) bytes.push(0x95);
+    else if(cp === 0x2013) bytes.push(0x96);
+    else if(cp === 0x2014) bytes.push(0x97);
+    else if(cp === 0x201C) bytes.push(0x93);
+    else if(cp === 0x201D) bytes.push(0x94);
+    else if(cp === 0x2019) bytes.push(0x92);
+    else bytes.push(0x3F);
+  }
+  return new Uint8Array(bytes);
+}
+function concatBytes(arrs){
+  const len = arrs.reduce((s,a)=> s + a.length, 0);
+  const out = new Uint8Array(len); let o = 0;
+  arrs.forEach(a=>{ out.set(a,o); o += a.length; });
+  return out;
+}
+function makeQuotePDF(q){
   const d = new Date(q.date).toLocaleDateString("es-US",{year:"numeric",month:"long",day:"numeric"});
-  let body = "";
+  const L = [];
+  const push = (t,x,y,f,s)=> L.push({t,x,y,f:f||"F1",s:s||11});
+  push("Sweets of the Heart",48,744,"F2",20);
+  push("Pastelería casera · South Jordan, UT · WhatsApp +1 801-680-6443",48,726,"F1",10);
+  push("Cotización #"+q.seq,48,698,"F2",15);
+  push("Fecha: "+d,48,680);
+  push("Cliente: "+(q.client.name||"-")+(q.client.phone? " · "+q.client.phone:""),48,664);
+  let y = 630;
   if(q.type==="individual"){
-    body = `<table><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Total</th></tr>` +
-      q.items.map(it=>`<tr><td>${esc(it.name)}</td><td class="r">${it.qty}</td><td class="r">${money(it.price)}</td><td class="r">${money(it.total)}</td></tr>`).join("") + `</table>`;
+    push("Producto",48,y,"F2",11); push("Cant.",330,y,"F2",11);
+    push("Precio",400,y,"F2",11); push("Total",480,y,"F2",11);
+    q.items.forEach(it=>{
+      y -= 16;
+      push(it.name,48,y); push(String(it.qty),330,y);
+      push(money(it.price),400,y); push(money(it.total),480,y);
+    });
   } else {
     const e = q.event;
-    body = `<table>
-      <tr><td>Producto</td><td class="r">${esc(e.name)}</td></tr>
-      <tr><td>Personas</td><td class="r">${e.people} (${e.perPerson} porción c/u = ${e.servings} porciones)</td></tr>
-      <tr><td>Precio por porción</td><td class="r">${money(e.pps)}</td></tr>
-      <tr><td>Subtotal</td><td class="r">${money(e.subtotal)}</td></tr>
-      <tr><td>Descuento por volumen (${e.disc}%)</td><td class="r">−${money(e.subtotal*e.disc/100)}</td></tr>
-      <tr><td>Delivery</td><td class="r">${money(e.delivery)}</td></tr></table>`;
+    const rows = [
+      ["Producto", e.name],
+      ["Personas", e.people+" ("+e.perPerson+" porción c/u = "+e.servings+" porciones)"],
+      ["Precio por porción", money(e.pps)],
+      ["Subtotal", money(e.subtotal)],
+      ["Descuento por volumen ("+e.disc+"%)", "-"+money(e.subtotal*e.disc/100)],
+      ["Delivery", money(e.delivery)]
+    ];
+    rows.forEach(([k,v])=>{ push(k,48,y); push(v,330,y); y -= 16; });
+    y += 16;
   }
-  document.getElementById("print-area").innerHTML = `
-    <h1>Sweets of the Heart 🧁</h1>
-    <div>Pastelería casera · South Jordan, UT · WhatsApp +1 801-680-6443</div>
-    <h2 style="margin:16px 0 4px">Cotización #${q.seq}</h2>
-    <div>Fecha: ${d}</div>
-    <div>Cliente: ${esc(q.client.name||"—")}${q.client.phone? " · "+esc(q.client.phone):""}</div>
-    ${body}
-    ${q.notes? `<div style="margin-top:8px">Notas: ${esc(q.notes)}</div>`:""}
-    <div class="tot">TOTAL: ${money(q.total)}</div>
-    <div style="margin-top:16px; color:#666">Cotización válida por 7 días. ¡Gracias por tu pedido!</div>`;
-  window.print();
+  if(q.notes){ y -= 8; push("Notas: "+q.notes,48,y); }
+  push("TOTAL: "+money(q.total),400,y-34,"F2",15);
+  push("Cotización válida por 7 días. ¡Gracias por tu pedido!",48,72,"F1",10);
+
+  let content = "0.7 w 48 648 m 564 648 l S\n";
+  L.forEach(o=>{ content += "BT /"+o.f+" "+o.s+" Tf 1 0 0 1 "+o.x+" "+o.y+" Tm ("+pdfEscape(o.t)+") Tj ET\n"; });
+  const streamBytes = toPdfBytes(content);
+  const objStrs = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"
+  ];
+  const chunks = [], offsets = [];
+  let pos = 0;
+  const add = u8 => { chunks.push(u8); pos += u8.length; };
+  add(toPdfBytes("%PDF-1.4\n"));
+  objStrs.forEach((s,i)=>{ offsets.push(pos); add(toPdfBytes((i+1)+" 0 obj\n"+s+"\nendobj\n")); });
+  offsets.push(pos);
+  add(concatBytes([toPdfBytes("6 0 obj\n<< /Length "+streamBytes.length+" >>\nstream\n"),
+    streamBytes, toPdfBytes("\nendstream\nendobj\n")]));
+  const xrefPos = pos;
+  let xref = "xref\n0 7\n0000000000 65535 f \n";
+  offsets.forEach(o=>{ xref += String(o).padStart(10,"0")+" 00000 n \n"; });
+  xref += "trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n"+xrefPos+"\n%%EOF";
+  add(toPdfBytes(xref));
+  return new Blob([concatBytes(chunks)], {type:"application/pdf"});
+}
+function sharePDF(q){
+  const blob = makeQuotePDF(q);
+  const name = "cotizacion-"+q.seq+"-sweets-of-the-heart.pdf";
+  const file = new File([blob], name, {type:"application/pdf"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    navigator.share({files:[file], title:"Cotización #"+q.seq}).catch(()=>{});
+    return;
+  }
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
 }
 function renderCotizar(){
   const el = document.getElementById("tab-cotizar");
@@ -434,7 +501,7 @@ document.addEventListener("change", e=>{
   const t = e.target;
   if(t.dataset.edit){
     const v = parseFloat(t.value);
-    if(t.dataset.edit==="factor") state.factor = v||3.5;
+    if(t.dataset.edit==="marginPct") state.marginPct = isNaN(v)?0:v;
     if(t.dataset.edit==="hourlyRate") state.hourlyRate = isNaN(v)?0:v;
     if(t.dataset.edit==="overheadPct") state.overheadPct = isNaN(v)?0:v;
     save(); renderAll(); return;
@@ -448,7 +515,6 @@ document.addEventListener("change", e=>{
     if(f==="packaging") p.packaging = isNaN(v)?0:v;
     if(f==="decor") p.decor = isNaN(v)?0:v;
     if(f==="laborHours") p.laborHours = isNaN(v)?0:v;
-    if(f==="factor") p.factor = (v==null||isNaN(v)) ? null : v;
     save(); renderAll(); return;
   }
   const ic = t.closest("[data-ing]");
@@ -526,9 +592,9 @@ document.addEventListener("click", e=>{
     draft = newDraft(); renderCotizar();
     alert("Cotización #"+q.seq+" guardada ✓"); return;
   }
-  if(t.id==="d-pdf"){ printQuote(snapshotDraft()); return; }
+  if(t.id==="d-pdf"){ sharePDF(snapshotDraft()); return; }
   if(t.id==="d-wa"){ copyText(quoteText(snapshotDraft())); return; }
-  if(t.dataset.qpdf){ const q = state.quotes.find(x=>x.id==t.dataset.qpdf); if(q) printQuote(q); return; }
+  if(t.dataset.qpdf){ const q = state.quotes.find(x=>x.id==t.dataset.qpdf); if(q) sharePDF(q); return; }
   if(t.dataset.qwa){ const q = state.quotes.find(x=>x.id==t.dataset.qwa); if(q) copyText(quoteText(q)); return; }
   if(t.dataset.qdel){
     if(confirm("¿Eliminar esta cotización?")){

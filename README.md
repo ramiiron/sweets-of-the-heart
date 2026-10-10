@@ -7,8 +7,8 @@ catering con descuentos por volumen.
 ## Estructura
 
 - `index.html` — estructura de la página (enlaza CSS y JS externos)
-- `css/styles.css` — todos los estilos, incluida la vista de impresión (PDF)
-- `js/app.js` — toda la lógica: datos, cálculos, las 4 pestañas y cotizaciones
+- `css/styles.css` — todos los estilos
+- `js/app.js` — toda la lógica: datos, cálculos, las 4 pestañas, cotizaciones y generación de PDF (archivo real compartible; el precio sugerido = costo total + % de ganancia)
 - `manifest.webmanifest` — configuración de instalación como PWA
 - `sw.js` — service worker para uso offline
 - `icons/` — iconos 192 y 512 px

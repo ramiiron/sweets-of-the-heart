@@ -1,4 +1,4 @@
-const CACHE = "soth-v4";
+const CACHE = "soth-v5";
 const ASSETS = ["./", "./index.html", "./css/styles.css", "./js/app.js",
   "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 
@@ -16,9 +16,9 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET" || !e.request.url.startsWith(self.location.origin)) return;
   const url = new URL(e.request.url);
   const p = url.pathname.replace(/\/$/, "") || "/";
-  const isPage = e.request.mode === "navigate" || p === "" || p === "/" ||
-    p.endsWith("/index.html") || p.endsWith(".html");
-  if (isPage) {
+  const isCode = e.request.mode === "navigate" || p === "" || p === "/" ||
+    p.endsWith("/index.html") || p.endsWith(".html") || p.endsWith(".js") || p.endsWith(".css");
+  if (isCode) {
     // network-first: siempre la versión más nueva; caché solo si no hay internet
     e.respondWith(
       fetch(e.request).then(res => {
