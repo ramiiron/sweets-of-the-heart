@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 /* ===== Datos iniciales (precios reales del flyer; insumos y recetas son EJEMPLOS) ===== */
 const SEED = {
   marginPct: 40,
@@ -111,6 +111,10 @@ const totalCost = p => costBreakdown(p).total;
 const suggested = p => Math.round(totalCost(p) * (1 + (state.marginPct||0)/100));
 const money = n => "$"+Number(n).toFixed(2);
 const money0 = n => "$"+Math.round(Number(n));
+function fmtDate(iso){
+  if(!iso) return "";
+  return new Date(iso+"T12:00:00").toLocaleDateString("es-US",{weekday:"short", day:"numeric", month:"short"});
+}
 function marginBadge(p){
   if(p.price==null) return `<span class="badge info">precio a cotizar</span>`;
   const tc = totalCost(p), s = suggested(p);
@@ -252,8 +256,14 @@ function discountFor(people){
   return 0;
 }
 let draft = null;
+function isoInDays(n){
+  const d = new Date(); d.setDate(d.getDate()+n);
+  const m = String(d.getMonth()+1).padStart(2,"0"), day = String(d.getDate()).padStart(2,"0");
+  return d.getFullYear()+"-"+m+"-"+day;
+}
 function newDraft(){
   return {type:"individual", clientName:"", clientPhone:"", notes:"",
+    deliveryDate: isoInDays(2),
     items:[], evProductId:null, people:30, perPerson:1, pps:null, delivery:0};
 }
 function evProduct(){ return prodById(draft.evProductId) || state.products[0]; }
@@ -275,7 +285,8 @@ function snapshotDraft(){
   const q = { id: Date.now(), seq: (state.quoteSeq||0)+1, date: Date.now(),
     type: draft.type,
     client: {name: draft.clientName.trim(), phone: draft.clientPhone.trim()},
-    notes: draft.notes.trim(), total: draftTotal() };
+    notes: draft.notes.trim(), deliveryDate: draft.deliveryDate || null, accepted: false,
+    total: draftTotal() };
   if(draft.type==="individual"){
     q.items = draft.items.map(it=>({name: it.name, qty: it.qty, price: it.price, total: it.qty*it.price}));
   } else {
@@ -288,6 +299,7 @@ function snapshotDraft(){
 function quoteText(q){
   let lines = [`Cotización #${q.seq} — Sweets of the Heart 🧁`];
   if(q.client.name) lines.push(`Cliente: ${q.client.name}`);
+  if(q.deliveryDate) lines.push(`Fecha de entrega: ${fmtDate(q.deliveryDate)}`);
   if(q.type==="individual"){
     q.items.forEach(it=> lines.push(`• ${it.name} × ${it.qty} — ${money(it.total)}`));
   } else {
@@ -343,7 +355,8 @@ function makeQuotePDF(q){
   push("Cotización #"+q.seq,48,698,"F2",15);
   push("Fecha: "+d,48,680);
   push("Cliente: "+(q.client.name||"-")+(q.client.phone? " · "+q.client.phone:""),48,664);
-  let y = 630;
+  if(q.deliveryDate) push("Fecha de entrega: "+fmtDate(q.deliveryDate),48,648);
+  let y = 618;
   if(q.type==="individual"){
     push("Producto",48,y,"F2",11); push("Cant.",330,y,"F2",11);
     push("Precio",400,y,"F2",11); push("Total",480,y,"F2",11);
@@ -369,7 +382,7 @@ function makeQuotePDF(q){
   push("TOTAL: "+money(q.total),400,y-34,"F2",15);
   push("Cotización válida por 7 días. ¡Gracias por tu pedido!",48,72,"F1",10);
 
-  let content = "0.7 w 48 648 m 564 648 l S\n";
+  let content = "0.7 w 48 636 m 564 636 l S\n";
   L.forEach(o=>{ content += "BT /"+o.f+" "+o.s+" Tf 1 0 0 1 "+o.x+" "+o.y+" Tm ("+pdfEscape(o.t)+") Tj ET\n"; });
   const streamBytes = toPdfBytes(content);
   const objStrs = [
@@ -407,6 +420,47 @@ function sharePDF(q){
   a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function shareICS(q){
+  if(!q.deliveryDate){ alert("Primero pon la fecha de entrega en la cotización."); return; }
+  const blob = new Blob([makeICS(q)], {type:"text/calendar"});
+  const file = new File([blob], "entrega-cotizacion-"+q.seq+".ics", {type:"text/calendar"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    navigator.share({files:[file], title:"Entrega cotización #"+q.seq}).catch(()=>{});
+    return;
+  }
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url; a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function icsEscape(s){
+  return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+}
+function makeICS(q){
+  const dstr = iso => iso ? iso.replace(/-/g,"") : "";
+  let desc = "";
+  if(q.type==="individual"){
+    desc = q.items.map(it=> it.name+" x"+it.qty+" — "+money(it.total)).join("\n");
+  } else {
+    const e = q.event;
+    desc = e.name+" para "+e.people+" personas ("+e.servings+" porciones)";
+  }
+  desc += "\nTotal: "+money(q.total);
+  if(q.client.phone) desc += "\nTel: "+q.client.phone;
+  if(q.notes) desc += "\nNotas: "+q.notes;
+  const nx = new Date(q.deliveryDate+"T12:00:00"); nx.setDate(nx.getDate()+1);
+  const next = nx.getFullYear()+"-"+String(nx.getMonth()+1).padStart(2,"0")+"-"+String(nx.getDate()).padStart(2,"0");
+  const stamp = new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Sweets of the Heart//Cotizador//ES",
+    "BEGIN:VEVENT","UID:cotizacion-"+q.id+"@sweets-of-the-heart",
+    "DTSTAMP:"+stamp,
+    "DTSTART;VALUE=DATE:"+dstr(q.deliveryDate),
+    "DTEND;VALUE=DATE:"+dstr(next),
+    "SUMMARY:"+icsEscape("Entrega Sweets of the Heart — "+(q.client.name||"cliente")+" (cotización #"+q.seq+")"),
+    "DESCRIPTION:"+icsEscape(desc),
+    "END:VEVENT","END:VCALENDAR"].join("\r\n");
 }
 function renderCotizar(){
   const el = document.getElementById("tab-cotizar");
@@ -449,8 +503,13 @@ function renderCotizar(){
       <div class="kv"><span>Delivery</span><strong>${money(draft.delivery)}</strong></div>`;
   }
   const hist = state.quotes.map(q=>`
-    <div class="kv"><span>#${q.seq} · ${esc(q.client.name||"Sin nombre")} · ${q.type==="evento"?"Evento":"Individual"} · ${new Date(q.date).toLocaleDateString("es-US")}</span><strong>${money(q.total)}</strong></div>
-    <div class="row" style="margin-bottom:8px">
+    <div class="kv"><span>#${q.seq} · ${esc(q.client.name||"Sin nombre")} · ${q.type==="evento"?"Evento":"Individual"}${q.deliveryDate? " · Entrega: "+fmtDate(q.deliveryDate):""}</span><strong>${money(q.total)}</strong></div>
+    <div style="margin:2px 0 6px">${q.accepted? '<span class="badge ok">✓ Aceptada</span>' : '<span class="badge info">Pendiente</span>'}</div>
+    <div class="row" style="margin-bottom:4px">
+      <button class="ghost small" data-qaccept="${q.id}">${q.accepted? "↩ Volver a pendiente" : "✓ Marcar aceptada"}</button>
+      ${q.accepted? `<button class="small" data-qcal="${q.id}">📅 Agregar al calendario</button>` : ""}
+    </div>
+    <div class="row" style="margin-bottom:10px">
       <button class="ghost small" data-qpdf="${q.id}">PDF</button>
       <button class="ghost small" data-qwa="${q.id}">WhatsApp</button>
       <button class="danger small" data-qdel="${q.id}">Eliminar</button>
@@ -472,6 +531,8 @@ function renderCotizar(){
       ${form}
       <label class="field" style="margin-top:10px"><span>Notas</span>
         <input id="d-notes" placeholder="Fecha, sabores, entrega…" value="${esc(draft.notes)}"></label>
+      <label class="field" style="margin-top:10px"><span>Fecha de entrega</span>
+        <input id="d-date" type="date" value="${draft.deliveryDate||""}"></label>
       <div class="total-row"><span><b>TOTAL</b></span><span class="big">${money(draftTotal())}</span></div>
       <div class="row" style="margin-top:10px">
         <button id="d-save" style="flex:1">Guardar</button>
@@ -534,6 +595,7 @@ document.addEventListener("change", e=>{
   if(t.id==="d-client"){ draft.clientName=t.value; return; }
   if(t.id==="d-phone"){ draft.clientPhone=t.value; return; }
   if(t.id==="d-notes"){ draft.notes=t.value; return; }
+  if(t.id==="d-date"){ draft.deliveryDate=t.value; return; }
   if(t.dataset.diq!==undefined){ draft.items[+t.dataset.diq].qty=parseFloat(t.value)||0; renderCotizar(); return; }
   if(t.dataset.dip!==undefined){ draft.items[+t.dataset.dip].price=parseFloat(t.value)||0; renderCotizar(); return; }
   if(t.id==="d-ev-product"){ draft.evProductId=t.value; draft.pps=null; renderCotizar(); return; }
@@ -595,6 +657,16 @@ document.addEventListener("click", e=>{
   }
   if(t.id==="d-pdf"){ sharePDF(snapshotDraft()); return; }
   if(t.id==="d-wa"){ copyText(quoteText(snapshotDraft())); return; }
+  if(t.dataset.qaccept){
+    const q = state.quotes.find(x=>x.id==t.dataset.qaccept);
+    if(q){ q.accepted = !q.accepted; save(); renderCotizar(); }
+    return;
+  }
+  if(t.dataset.qcal){
+    const q = state.quotes.find(x=>x.id==t.dataset.qcal);
+    if(q) shareICS(q);
+    return;
+  }
   if(t.dataset.qpdf){ const q = state.quotes.find(x=>x.id==t.dataset.qpdf); if(q) sharePDF(q); return; }
   if(t.dataset.qwa){ const q = state.quotes.find(x=>x.id==t.dataset.qwa); if(q) copyText(quoteText(q)); return; }
   if(t.dataset.qdel){

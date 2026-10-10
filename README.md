@@ -31,9 +31,11 @@ Los datos se guardan en el `localStorage` del dispositivo (`soth-data-v1`).
 2. **Recetas** — ingredientes y cantidades por producto, con costo calculado.
 3. **Insumos** — lista de ingredientes con precio de compra y costo unitario;
    editable y ampliable.
-4. **Cotizar** — cotizador de catering: personas, porciones por persona,
-   descuento automático (30–49: 5%, 50–99: 10%, 100+: 15%), delivery y botón
-   para copiar la cotización lista para WhatsApp.
+4. **Cotizar** — cotizaciones individuales (productos × cantidad) y de eventos
+   (personas × porciones, descuento automático 30–49: 5%, 50–99: 10%, 100+: 15%),
+   con cliente, notas y **fecha de entrega**. Se guardan en un historial; al
+   marcar una como **aceptada** aparece el botón para agregarla al calendario
+   (archivo .ics). Cada cotización se puede compartir como PDF o por WhatsApp.
 
 ## Probar local
 
