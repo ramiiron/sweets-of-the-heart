@@ -67,6 +67,17 @@ nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
   display:flex; justify-content:space-between; align-items:center; margin-top:10px}
 .total-row .big{color:#FFDFAE}
 .copy-ok{color:var(--green); font-size:13px; font-weight:600}
+#print-area{display:none}
+@media print{
+  body{background:#fff; padding:0}
+  header,main,nav#tabs{display:none!important}
+  #print-area{display:block; padding:24px; color:#222; font-size:14px}
+  #print-area h1{font-size:22px; margin:0 0 2px}
+  #print-area table{width:100%; border-collapse:collapse; margin:12px 0}
+  #print-area td, #print-area th{border-bottom:1px solid #ddd; padding:7px 4px; text-align:left}
+  #print-area .r{text-align:right}
+  #print-area .tot{font-size:18px; font-weight:800; text-align:right; margin-top:10px}
+}
 </style>
 </head>
 <body>
@@ -80,6 +91,7 @@ nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
   <section id="tab-insumos" class="tab"></section>
   <section id="tab-cotizar" class="tab"></section>
 </main>
+<div id="print-area"></div>
 <nav id="tabs">
   <button data-tab="productos" class="active"><span class="ico">🧾</span>Productos</button>
   <button data-tab="recetas"><span class="ico">📝</span>Recetas</button>
@@ -91,6 +103,10 @@ nav#tabs button.active{color:var(--cinnamon); background:#FBF1E3}
 /* ===== Datos iniciales (precios reales del flyer; insumos y recetas son EJEMPLOS) ===== */
 const SEED = {
   factor: 3.5,
+  hourlyRate: 15,
+  overheadPct: 10,
+  quotes: [],
+  quoteSeq: 0,
   ingredients: [
     {id:"harina",   name:"Harina todo uso",      price:4.50, pkg:5,    unit:"lb",    density:120},
     {id:"azucar",   name:"Azúcar granulada",     price:3.80, pkg:4,    unit:"lb",    density:200},
@@ -155,12 +171,21 @@ function lineCost(l){
 /* ===== Estado ===== */
 const KEY = "soth-data-v2";
 let state;
+function normalize(){
+  if(state.factor==null) state.factor = 3.5;
+  if(state.hourlyRate==null) state.hourlyRate = 15;
+  if(state.overheadPct==null) state.overheadPct = 10;
+  if(!Array.isArray(state.quotes)) state.quotes = [];
+  if(state.quoteSeq==null) state.quoteSeq = 0;
+  state.products.forEach(p=>{ if(p.laborHours==null) p.laborHours = 0; if(p.decor==null) p.decor = 0; });
+}
 function load(){
   try{
     const raw = localStorage.getItem(KEY);
-    if(raw){ state = JSON.parse(raw); return; }
+    if(raw){ state = JSON.parse(raw); normalize(); return; }
   }catch(e){}
   state = JSON.parse(JSON.stringify(SEED));
+  normalize();
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 function resetData(){
@@ -176,7 +201,13 @@ const unitCost = ing => ing.pkg > 0 ? ing.price/ing.pkg : 0;
 function recipeCost(p){
   return p.recipe.reduce((s,l)=> s + lineCost(l).cost, 0);
 }
-const totalCost = p => recipeCost(p) + (p.packaging||0);
+const laborCost = p => (p.laborHours||0)*(state.hourlyRate||0);
+function costBreakdown(p){
+  const r = recipeCost(p), pack = p.packaging||0, dec = p.decor||0, lab = laborCost(p);
+  const sub = r+pack+dec+lab, oh = sub*(state.overheadPct||0)/100;
+  return {r, pack, dec, lab, oh, total: sub+oh};
+}
+const totalCost = p => costBreakdown(p).total;
 const factorOf = p => p.factor || state.factor;
 const suggested = p => Math.round(totalCost(p)*factorOf(p));
 const money = n => "$"+Number(n).toFixed(2);
@@ -195,12 +226,19 @@ const unitOpts = sel => UNITS.map(u=>`<option value="${u}" ${u===sel?"selected":
 function renderProductos(){
   const el = document.getElementById("tab-productos");
   let h = `<div class="notice">Precios reales del flyer. Los <b>costos de insumos son ejemplos</b>: actualízalos en la pestaña Insumos.</div>`;
-  h += `<div class="card"><div class="row">
-      <label class="field" style="flex:1"><span>Factor global (precio = costo × factor)</span>
+  h += `<div class="card">
+      <label class="field"><span>Factor global (precio = costo total × factor)</span>
       <input type="number" step="0.1" min="1" value="${state.factor}" data-edit="factor"></label>
-    </div></div>`;
+      <div class="grid2">
+        <label class="field"><span>Tarifa por hora (mano de obra)</span>
+          <input type="number" step="0.5" min="0" value="${state.hourlyRate}" data-edit="hourlyRate"></label>
+        <label class="field"><span>Gastos indirectos (%)</span>
+          <input type="number" step="1" min="0" value="${state.overheadPct}" data-edit="overheadPct"></label>
+      </div>
+      <div class="muted">Costo total = receta + empaque + decoración + mano de obra + indirectos. Si ya incluyes la mano de obra, un factor más bajo (1.5–2) suele bastar.</div>
+    </div>`;
   for(const p of state.products){
-    const rc=recipeCost(p), tc=totalCost(p), sug=suggested(p);
+    const sug = suggested(p), b = costBreakdown(p);
     const perSlice = p.price!=null ? p.price/p.portions : sug/p.portions;
     h += `<div class="card" data-product="${p.id}">
       <h3>${esc(p.name)}</h3>
@@ -214,9 +252,17 @@ function renderProductos(){
         <label class="field"><span>Factor (vacío = global)</span>
           <input type="number" step="0.1" min="1" placeholder="${state.factor}" value="${p.factor??""}" data-pf="factor"></label>
       </div>
+      <div class="grid2" style="margin-top:8px">
+        <label class="field"><span>Decoración (USD)</span>
+          <input type="number" step="0.1" min="0" value="${p.decor||0}" data-pf="decor"></label>
+        <label class="field"><span>Mano de obra (horas)</span>
+          <input type="number" step="0.25" min="0" value="${p.laborHours||0}" data-pf="laborHours"></label>
+      </div>
       <hr class="sep">
-      <div class="kv"><span>Costo receta</span><strong>${money(rc)}</strong></div>
-      <div class="kv"><span>Costo total (receta + empaque)</span><strong>${money(tc)}</strong></div>
+      <div class="kv"><span>Costo receta</span><strong>${money(b.r)}</strong></div>
+      <div class="kv"><span>Mano de obra (${p.laborHours||0} h × ${money(state.hourlyRate)})</span><strong>${money(b.lab)}</strong></div>
+      <div class="kv"><span>Empaque + decoración + indirectos (${state.overheadPct}%)</span><strong>${money(b.pack+b.dec+b.oh)}</strong></div>
+      <div class="kv"><span>Costo total</span><strong>${money(b.total)}</strong></div>
       <div class="kv"><span>Precio sugerido (costo × ${factorOf(p)})</span><strong>${money0(sug)}</strong></div>
       <div class="kv"><span>Precio por porción</span><strong>${money(perSlice)}</strong></div>
       <div style="margin-top:6px">${marginBadge(p)}</div>
@@ -303,66 +349,173 @@ function renderInsumos(){
   el.innerHTML = h;
 }
 
-/* ===== Pestaña: Cotizar (catering) ===== */
-let quote = {productId:null, people:30, perPerson:1, pricePerServing:null, delivery:0};
+/* ===== Pestaña: Cotizar ===== */
 function discountFor(people){
   if(people>=100) return 15;
   if(people>=50)  return 10;
   if(people>=30)  return 5;
   return 0;
 }
+let draft = null;
+function newDraft(){
+  return {type:"individual", clientName:"", clientPhone:"", notes:"",
+    items:[], evProductId:null, people:30, perPerson:1, pps:null, delivery:0};
+}
+function evProduct(){ return prodById(draft.evProductId) || state.products[0]; }
+function evNumbers(){
+  const p = evProduct();
+  const base = p.price!=null ? p.price/p.portions : suggested(p)/p.portions;
+  const servings = draft.people*draft.perPerson;
+  const pps = draft.pps!=null ? draft.pps : Math.round(base*100)/100;
+  const subtotal = servings*pps;
+  const disc = discountFor(draft.people);
+  const total = subtotal - subtotal*disc/100 + draft.delivery;
+  return {p, servings, pps, subtotal, disc, total};
+}
+function draftTotal(){
+  if(draft.type==="evento") return evNumbers().total;
+  return draft.items.reduce((s,it)=> s + it.qty*it.price, 0);
+}
+function snapshotDraft(){
+  const q = { id: Date.now(), seq: (state.quoteSeq||0)+1, date: Date.now(),
+    type: draft.type,
+    client: {name: draft.clientName.trim(), phone: draft.clientPhone.trim()},
+    notes: draft.notes.trim(), total: draftTotal() };
+  if(draft.type==="individual"){
+    q.items = draft.items.map(it=>({name: it.name, qty: it.qty, price: it.price, total: it.qty*it.price}));
+  } else {
+    const n = evNumbers();
+    q.event = {name: n.p.name, people: draft.people, perPerson: draft.perPerson,
+      servings: n.servings, pps: n.pps, subtotal: n.subtotal, disc: n.disc, delivery: draft.delivery};
+  }
+  return q;
+}
+function quoteText(q){
+  let lines = [`Cotización #${q.seq} — Sweets of the Heart 🧁`];
+  if(q.client.name) lines.push(`Cliente: ${q.client.name}`);
+  if(q.type==="individual"){
+    q.items.forEach(it=> lines.push(`• ${it.name} × ${it.qty} — ${money(it.total)}`));
+  } else {
+    const e = q.event;
+    lines.push(`Producto: ${e.name}`);
+    lines.push(`Personas: ${e.people} (${e.perPerson} porción c/u = ${e.servings} porciones)`);
+    lines.push(`Precio por porción: ${money(e.pps)}`);
+    lines.push(`Subtotal: ${money(e.subtotal)}`);
+    lines.push(`Descuento por volumen (${e.disc}%): −${money(e.subtotal*e.disc/100)}`);
+    lines.push(`Delivery: ${money(e.delivery)}`);
+  }
+  if(q.notes) lines.push(`Notas: ${q.notes}`);
+  lines.push(`TOTAL: ${money(q.total)}`);
+  lines.push(`Cotización válida por 7 días.`);
+  return lines.join("\n");
+}
+async function copyText(txt){
+  try{ await navigator.clipboard.writeText(txt); alert("Copiada ✓ Lista para pegar en WhatsApp"); }
+  catch(e){ alert(txt); }
+}
+function printQuote(q){
+  const d = new Date(q.date).toLocaleDateString("es-US",{year:"numeric",month:"long",day:"numeric"});
+  let body = "";
+  if(q.type==="individual"){
+    body = `<table><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Total</th></tr>` +
+      q.items.map(it=>`<tr><td>${esc(it.name)}</td><td class="r">${it.qty}</td><td class="r">${money(it.price)}</td><td class="r">${money(it.total)}</td></tr>`).join("") + `</table>`;
+  } else {
+    const e = q.event;
+    body = `<table>
+      <tr><td>Producto</td><td class="r">${esc(e.name)}</td></tr>
+      <tr><td>Personas</td><td class="r">${e.people} (${e.perPerson} porción c/u = ${e.servings} porciones)</td></tr>
+      <tr><td>Precio por porción</td><td class="r">${money(e.pps)}</td></tr>
+      <tr><td>Subtotal</td><td class="r">${money(e.subtotal)}</td></tr>
+      <tr><td>Descuento por volumen (${e.disc}%)</td><td class="r">−${money(e.subtotal*e.disc/100)}</td></tr>
+      <tr><td>Delivery</td><td class="r">${money(e.delivery)}</td></tr></table>`;
+  }
+  document.getElementById("print-area").innerHTML = `
+    <h1>Sweets of the Heart 🧁</h1>
+    <div>Pastelería casera · South Jordan, UT · WhatsApp +1 801-680-6443</div>
+    <h2 style="margin:16px 0 4px">Cotización #${q.seq}</h2>
+    <div>Fecha: ${d}</div>
+    <div>Cliente: ${esc(q.client.name||"—")}${q.client.phone? " · "+esc(q.client.phone):""}</div>
+    ${body}
+    ${q.notes? `<div style="margin-top:8px">Notas: ${esc(q.notes)}</div>`:""}
+    <div class="tot">TOTAL: ${money(q.total)}</div>
+    <div style="margin-top:16px; color:#666">Cotización válida por 7 días. ¡Gracias por tu pedido!</div>`;
+  window.print();
+}
 function renderCotizar(){
   const el = document.getElementById("tab-cotizar");
-  if(!quote.productId || !prodById(quote.productId)) quote.productId = state.products[0].id;
-  const p = prodById(quote.productId);
-  const baseSlice = p.price!=null ? p.price/p.portions : suggested(p)/p.portions;
-  if(quote.pricePerServing==null) quote.pricePerServing = Math.round(baseSlice*100)/100;
-  const servings = quote.people*quote.perPerson;
-  const subtotal = servings*quote.pricePerServing;
-  const disc = discountFor(quote.people);
-  const discAmt = subtotal*disc/100;
-  const total = subtotal-discAmt+quote.delivery;
+  if(!draft) draft = newDraft();
+  const ep = evProduct();
+  if(!draft.evProductId) draft.evProductId = ep.id;
+  const n = evNumbers();
+  let form = "";
+  if(draft.type==="individual"){
+    const rows = draft.items.map((it,idx)=>`<tr>
+      <td>${esc(it.name)}</td>
+      <td class="num"><input type="number" step="1" min="0" value="${it.qty}" data-diq="${idx}" style="width:60px"></td>
+      <td class="num"><input type="number" step="0.5" min="0" value="${it.price}" data-dip="${idx}" style="width:76px"></td>
+      <td class="num">${money(it.qty*it.price)}</td>
+      <td><button class="danger small" data-didel="${idx}">✕</button></td></tr>`).join("");
+    form = `<table class="lines"><tr><th>Producto</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Total</th><th></th></tr>${rows}</table>
+      <div class="row" style="margin-top:10px">
+        <select id="d-add-product" style="flex:2">${state.products.map(x=>
+          `<option value="${x.id}">${esc(x.name)}${x.price!=null?" — "+money0(x.price):""}</option>`).join("")}</select>
+        <button id="d-add-item">Añadir</button>
+      </div>`;
+  } else {
+    form = `<label class="field"><span>Producto</span>
+        <select id="d-ev-product">${state.products.map(x=>
+          `<option value="${x.id}" ${x.id===ep.id?"selected":""}>${esc(x.name)}${x.price!=null?" — "+money0(x.price):""}</option>`).join("")}</select></label>
+      <div class="grid2">
+        <label class="field"><span>Personas</span>
+          <input id="d-ev-people" type="number" step="1" min="1" value="${draft.people}"></label>
+        <label class="field"><span>Porciones por persona</span>
+          <input id="d-ev-per" type="number" step="0.5" min="0.5" value="${draft.perPerson}"></label>
+        <label class="field"><span>Precio por porción (USD)</span>
+          <input id="d-ev-pps" type="number" step="0.05" min="0" value="${n.pps}"></label>
+        <label class="field"><span>Delivery (USD)</span>
+          <input id="d-ev-delivery" type="number" step="0.5" min="0" value="${draft.delivery}"></label>
+      </div>
+      <div class="muted">Total porciones: <b>${n.servings}</b> · Descuento por volumen: 30–49 → 5% · 50–99 → 10% · 100+ → 15%</div>
+      <hr class="sep">
+      <div class="kv"><span>Subtotal</span><strong>${money(n.subtotal)}</strong></div>
+      <div class="kv"><span>Descuento (${n.disc}%)</span><strong>−${money(n.subtotal*n.disc/100)}</strong></div>
+      <div class="kv"><span>Delivery</span><strong>${money(draft.delivery)}</strong></div>`;
+  }
+  const hist = state.quotes.map(q=>`
+    <div class="kv"><span>#${q.seq} · ${esc(q.client.name||"Sin nombre")} · ${q.type==="evento"?"Evento":"Individual"} · ${new Date(q.date).toLocaleDateString("es-US")}</span><strong>${money(q.total)}</strong></div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="ghost small" data-qpdf="${q.id}">PDF</button>
+      <button class="ghost small" data-qwa="${q.id}">WhatsApp</button>
+      <button class="danger small" data-qdel="${q.id}">Eliminar</button>
+    </div>`).join("");
   el.innerHTML = `
     <div class="card">
-      <label class="field"><span>Producto</span>
-        <select id="q-product">${state.products.map(x=>
-          `<option value="${x.id}" ${x.id===p.id?"selected":""}>${esc(x.name)}${x.price!=null?" — "+money0(x.price):""}</option>`).join("")}</select></label>
-      <div class="grid2" style="margin-top:8px">
-        <label class="field"><span>Personas</span>
-          <input id="q-people" type="number" step="1" min="1" value="${quote.people}"></label>
-        <label class="field"><span>Porciones por persona</span>
-          <input id="q-perperson" type="number" step="0.5" min="0.5" value="${quote.perPerson}"></label>
-        <label class="field"><span>Precio por porción (USD)</span>
-          <input id="q-pps" type="number" step="0.05" min="0" value="${quote.pricePerServing}"></label>
-        <label class="field"><span>Delivery (USD)</span>
-          <input id="q-delivery" type="number" step="0.5" min="0" value="${quote.delivery}"></label>
+      <h3>Nueva cotización</h3>
+      <label class="field"><span>Tipo</span>
+        <select id="d-type">
+          <option value="individual" ${draft.type==="individual"?"selected":""}>Individual (productos × cantidad)</option>
+          <option value="evento" ${draft.type==="evento"?"selected":""}>Evento / catering (por persona)</option>
+        </select></label>
+      <div class="grid2">
+        <label class="field"><span>Cliente</span>
+          <input id="d-client" placeholder="Nombre" value="${esc(draft.clientName)}"></label>
+        <label class="field"><span>Teléfono</span>
+          <input id="d-phone" placeholder="Opcional" value="${esc(draft.clientPhone)}"></label>
       </div>
-      <div class="muted" style="margin-top:6px">Total porciones: <b>${servings}</b> · Descuento automático: 30–49 → 5% · 50–99 → 10% · 100+ → 15%</div>
+      ${form}
+      <label class="field" style="margin-top:10px"><span>Notas</span>
+        <input id="d-notes" placeholder="Fecha, sabores, entrega…" value="${esc(draft.notes)}"></label>
+      <div class="total-row"><span><b>TOTAL</b></span><span class="big">${money(draftTotal())}</span></div>
+      <div class="row" style="margin-top:10px">
+        <button id="d-save" style="flex:1">Guardar</button>
+        <button id="d-pdf" class="ghost" style="flex:1">PDF</button>
+        <button id="d-wa" class="ghost" style="flex:1">WhatsApp</button>
+      </div>
     </div>
     <div class="card">
-      <div class="kv"><span>Subtotal (${servings} × ${money(quote.pricePerServing)})</span><strong>${money(subtotal)}</strong></div>
-      <div class="kv"><span>Descuento por volumen (${disc}%)</span><strong>−${money(discAmt)}</strong></div>
-      <div class="kv"><span>Delivery</span><strong>${money(quote.delivery)}</strong></div>
-      <div class="total-row"><span><b>TOTAL</b></span><span class="big">${money(total)}</span></div>
-      <div class="row" style="margin-top:10px">
-        <button id="q-copy" style="flex:1">📋 Copiar cotización</button>
-      </div>
-      <div id="q-ok" class="copy-ok" style="margin-top:6px"></div>
+      <h3>Cotizaciones guardadas</h3>
+      ${hist || '<div class="muted">Todavía no hay cotizaciones guardadas.</div>'}
     </div>`;
-  const txt =
-`Cotización — Sweets of the Heart 🧁
-Producto: ${p.name}
-Personas: ${quote.people} (${quote.perPerson} porción c/u = ${servings} porciones)
-Precio por porción: ${money(quote.pricePerServing)}
-Subtotal: ${money(subtotal)}
-Descuento por volumen (${disc}%): −${money(discAmt)}
-Delivery: ${money(quote.delivery)}
-TOTAL: ${money(total)}`;
-  document.getElementById("q-copy").onclick = async ()=>{
-    try{ await navigator.clipboard.writeText(txt);
-      document.getElementById("q-ok").textContent = "✓ Copiada, lista para pegar en WhatsApp";
-    }catch(e){ document.getElementById("q-ok").textContent = "No se pudo copiar: "+txt; }
-  };
 }
 
 /* ===== Render general + eventos ===== */
@@ -380,7 +533,13 @@ document.querySelectorAll("nav#tabs button").forEach(b=>{
 
 document.addEventListener("change", e=>{
   const t = e.target;
-  if(t.dataset.edit==="factor"){ state.factor = parseFloat(t.value)||3.5; save(); renderAll(); return; }
+  if(t.dataset.edit){
+    const v = parseFloat(t.value);
+    if(t.dataset.edit==="factor") state.factor = v||3.5;
+    if(t.dataset.edit==="hourlyRate") state.hourlyRate = isNaN(v)?0:v;
+    if(t.dataset.edit==="overheadPct") state.overheadPct = isNaN(v)?0:v;
+    save(); renderAll(); return;
+  }
   const pc = t.closest("[data-product]");
   if(pc && t.dataset.pf){
     const p = prodById(pc.dataset.product); const f = t.dataset.pf;
@@ -388,6 +547,8 @@ document.addEventListener("change", e=>{
     if(f==="price") p.price = (v==null||isNaN(v)) ? null : v;
     if(f==="portions") p.portions = Math.max(1, Math.round(v)||1);
     if(f==="packaging") p.packaging = isNaN(v)?0:v;
+    if(f==="decor") p.decor = isNaN(v)?0:v;
+    if(f==="laborHours") p.laborHours = isNaN(v)?0:v;
     if(f==="factor") p.factor = (v==null||isNaN(v)) ? null : v;
     save(); renderAll(); return;
   }
@@ -403,11 +564,17 @@ document.addEventListener("change", e=>{
     prodById(recetaSel).recipe[+t.dataset.rlu].unit = t.value;
     save(); renderRecetas(); renderProductos(); return;
   }
-  if(t.id==="q-product"){ quote.productId=t.value; quote.pricePerServing=null; save(); renderCotizar(); return; }
-  if(t.id==="q-people"){ quote.people=Math.max(1,Math.round(parseFloat(t.value)||1)); renderCotizar(); return; }
-  if(t.id==="q-perperson"){ quote.perPerson=parseFloat(t.value)||1; renderCotizar(); return; }
-  if(t.id==="q-pps"){ quote.pricePerServing=parseFloat(t.value)||0; renderCotizar(); return; }
-  if(t.id==="q-delivery"){ quote.delivery=parseFloat(t.value)||0; renderCotizar(); return; }
+  if(t.id==="d-type"){ draft.type=t.value; renderCotizar(); return; }
+  if(t.id==="d-client"){ draft.clientName=t.value; return; }
+  if(t.id==="d-phone"){ draft.clientPhone=t.value; return; }
+  if(t.id==="d-notes"){ draft.notes=t.value; return; }
+  if(t.dataset.diq!==undefined){ draft.items[+t.dataset.diq].qty=parseFloat(t.value)||0; renderCotizar(); return; }
+  if(t.dataset.dip!==undefined){ draft.items[+t.dataset.dip].price=parseFloat(t.value)||0; renderCotizar(); return; }
+  if(t.id==="d-ev-product"){ draft.evProductId=t.value; draft.pps=null; renderCotizar(); return; }
+  if(t.id==="d-ev-people"){ draft.people=Math.max(1,Math.round(parseFloat(t.value)||1)); renderCotizar(); return; }
+  if(t.id==="d-ev-per"){ draft.perPerson=parseFloat(t.value)||1; renderCotizar(); return; }
+  if(t.id==="d-ev-pps"){ draft.pps=parseFloat(t.value)||0; renderCotizar(); return; }
+  if(t.id==="d-ev-delivery"){ draft.delivery=parseFloat(t.value)||0; renderCotizar(); return; }
   if(t.dataset.rl!==undefined){
     const p = prodById(recetaSel);
     p.recipe[+t.dataset.rl].qty = parseFloat(t.value)||0;
@@ -446,6 +613,30 @@ document.addEventListener("click", e=>{
     if(!name||pkg<=0){ alert("Nombre y cantidad del envase son obligatorios."); return; }
     state.ingredients.push({id:"ing-"+Date.now(), name, price, pkg, unit});
     save(); renderAll(); return;
+  }
+  if(t.id==="d-add-item"){
+    const sel = document.getElementById("d-add-product");
+    const p = prodById(sel.value);
+    if(p){ draft.items.push({productId:p.id, name:p.name, qty:1, price: p.price!=null? p.price : suggested(p)}); renderCotizar(); }
+    return;
+  }
+  if(t.dataset.didel!==undefined){ draft.items.splice(+t.dataset.didel,1); renderCotizar(); return; }
+  if(t.id==="d-save"){
+    const q = snapshotDraft();
+    state.quoteSeq = q.seq; state.quotes.unshift(q); save();
+    draft = newDraft(); renderCotizar();
+    alert("Cotización #"+q.seq+" guardada ✓"); return;
+  }
+  if(t.id==="d-pdf"){ printQuote(snapshotDraft()); return; }
+  if(t.id==="d-wa"){ copyText(quoteText(snapshotDraft())); return; }
+  if(t.dataset.qpdf){ const q = state.quotes.find(x=>x.id==t.dataset.qpdf); if(q) printQuote(q); return; }
+  if(t.dataset.qwa){ const q = state.quotes.find(x=>x.id==t.dataset.qwa); if(q) copyText(quoteText(q)); return; }
+  if(t.dataset.qdel){
+    if(confirm("¿Eliminar esta cotización?")){
+      state.quotes = state.quotes.filter(x=>x.id!=t.dataset.qdel);
+      save(); renderCotizar();
+    }
+    return;
   }
   if(t.id==="ni-reset"){ resetData(); return; }
 });
